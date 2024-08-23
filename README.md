@@ -33,3 +33,9 @@ Compare Elasticsearch with Postgres full text search.
 Compare Redis with memcache and see if Redis in-built data structures provide an advantage compared to storing everything as JSON dump.
 
 Introduce an Analytical database to perform analytical queries which can generate reports.
+
+Implement websocket so that any new question added starts showing up immediately.
+
+Add ML to predict the kanda and difficulty for a question
+
+Implement suggestions and question recommendations based on earlier questions attempted.
