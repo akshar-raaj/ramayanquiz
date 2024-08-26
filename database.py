@@ -127,8 +127,20 @@ def get_questions():
     connection = get_database_connection()
     rows = []
     columns = []
+    # query = """
+    # SELECT q.id as question_id, question, a.id as answer_id, answer, is_correct FROM questions q INNER JOIN answers a on q.id=a.question_id;
+    # """
     query = """
-    SELECT q.id as question_id, question, a.id as answer_id, answer, is_correct FROM questions q INNER JOIN answers a on q.id=a.question_id;
+    SELECT questions.id as id, question, answers.id as answer_id, answer, is_correct
+    FROM (
+        SELECT id, question
+        FROM questions
+        ORDER BY id
+        LIMIT 2
+    ) AS questions
+    LEFT JOIN answers
+    ON questions.id = answers.question_id
+    ORDER BY questions.id, answers.id
     """
     with connection:
         with connection.cursor() as cursor:
@@ -139,7 +151,12 @@ def get_questions():
             columns = [column.name for column in cursor.description]
     # Let's apply two pointers just for fun
     # instead of using zip
+    print(columns)
+    if len(rows) == 0:
+        return rows
     questions = []
+    # questions.append()
+    # Apply labels and covert to a list of dict
     for row in rows:
         row_dict = {}
         value_index = 0
@@ -149,4 +166,18 @@ def get_questions():
             value_index += 1
             column_index += 1
         questions.append(row_dict)
-    return questions
+    # Group the answers for same question
+    grouped_answers = []
+    first_question = questions[0]
+    grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct']}]})
+    for index in range(1, len(questions)):
+        question = questions[index]
+        if question['id'] == first_question['id']:
+            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct']})
+        else:
+            first_question = question
+            grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'answers': []})
+            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct']})
+
+    # return questions
+    return grouped_answers
