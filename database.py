@@ -136,7 +136,7 @@ def get_questions():
         SELECT id, question
         FROM questions
         ORDER BY id
-        LIMIT 2
+        LIMIT 20
     ) AS questions
     LEFT JOIN answers
     ON questions.id = answers.question_id
