@@ -25,6 +25,21 @@ Cache: Redis
 Message Queue: RabbitMQ
 Background Task Processing: Celery
 
+## Feature List
+- Database tables for entities
+- API to create questions
+- Add questions through csv upload
+- User authentication
+- Associate user and answer
+- Track user's answers
+- User answer report:
+  - Pie chart: Unattempted, attempted
+  - Pie chart: Correct, Incorrect
+  - Bar chart: Correct, incorrect for difficulty levels
+  - Bar chart: Correct, incorrect for tags
+  - Stacked Bar chart: Total, correct, incorrect for difficulty levels
+- Share report on Linkedin, Twitter and Facebook
+
 ## More
 Along with PostgreSQL, we will also use MongoDB. This is only for demonstration purpose to understand which things are easy/difficult in PostgreSQL vs MongoDB.
 
