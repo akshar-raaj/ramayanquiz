@@ -1,8 +1,14 @@
+import csv
+from io import StringIO
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import File, UploadFile
+
+from typing import Annotated
+
 from models import Question
-from database import create_question
+from database import create_question, create_questions_bulk
 
 app = FastAPI()
 
@@ -36,3 +42,28 @@ def get_questions():
 def post_question(question: Question):
     question_id = create_question(**question.dict())
     return {"question_id": question_id}
+
+
+@app.post("/questions/bulk")
+def post_bulk_questions(file: UploadFile):
+    f = file.file
+    contents = f.read()
+    csv_data = contents.decode('utf-8')
+    csv_file = StringIO(csv_data)
+    # Read each line of the binary file as string
+    reader = csv.DictReader(csv_file)
+    questions = []
+    for row in reader:
+        answers = row['Answers']
+        answers = answers.split('\n')
+        question = {'question': row['Question'], 'answers': []}
+        for answer in answers:
+            if 'correct' in answer:
+                answer = answer.removesuffix(' - correct')
+                question['answers'].append({'answer': answer, 'is_correct': True})
+            else:
+                question['answers'].append({'answer': answer, 'is_correct': False})
+        questions.append(question)
+    create_questions_bulk(questions)
+    print(questions)
+    return {"status": "OK"}

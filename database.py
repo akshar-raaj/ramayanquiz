@@ -121,6 +121,37 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] | N
     return inserted_id
 
 
+@retry_with_new_connection
+def create_questions_bulk(questions: list):
+    inserted_ids = []
+    connection = get_database_connection()
+    # We have created a context.
+    # Hence transaction will be committed on successful execution of the block
+    # or else it would be rolled back
+    # No need to explicitly call connection.commit()
+    with connection:
+        with connection.cursor() as cursor:
+            for question in questions:
+                question_text = question['question']
+                kanda = question.get('kanda')
+                tags = question.get('tags', [])
+                difficulty = question.get('difficulty')
+                answers = question['answers']
+                cursor.execute(
+                    "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (question_text, kanda, tags, difficulty),
+                )
+                inserted_id = cursor.fetchone()[0]
+                inserted_ids.append(inserted_id)
+                if len(answers) > 0:
+                    for answer in answers:
+                        cursor.execute(
+                            "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)",
+                            (inserted_id, answer["answer"], answer.get("is_correct", False)),
+                        )
+    return inserted_ids
+
+
 # Write a function to retrieve the questions
 @retry_with_new_connection
 def get_questions():
