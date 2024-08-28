@@ -56,7 +56,7 @@ def post_bulk_questions(file: UploadFile):
     for row in reader:
         answers = row['Answers']
         answers = answers.split('\n')
-        question = {'question': row['Question'], 'answers': []}
+        question = {'question': row['Question'], 'answers': [], 'difficulty': row['Difficulty']}
         for answer in answers:
             if 'correct' in answer:
                 answer = answer.removesuffix(' - correct')
