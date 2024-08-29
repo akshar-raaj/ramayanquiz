@@ -33,9 +33,9 @@ def read_root():
 
 
 @app.get("/questions")
-def get_questions():
+def get_questions(limit: int | None = 20, offset: int | None = 0):
     from database import get_questions
-    return get_questions()
+    return get_questions(limit=limit, offset=offset)
 
 
 @app.post("/questions")

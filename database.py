@@ -154,20 +154,21 @@ def create_questions_bulk(questions: list):
 
 # Write a function to retrieve the questions
 @retry_with_new_connection
-def get_questions():
+def get_questions(limit=20, offset=0):
     connection = get_database_connection()
     rows = []
     columns = []
     # query = """
     # SELECT q.id as question_id, question, a.id as answer_id, answer, is_correct FROM questions q INNER JOIN answers a on q.id=a.question_id;
     # """
-    query = """
+    query = f"""
     SELECT questions.id as id, question, answers.id as answer_id, answer, is_correct
     FROM (
         SELECT id, question
         FROM questions
         ORDER BY id
-        LIMIT 20
+        LIMIT {limit}
+        OFFSET {offset}
     ) AS questions
     LEFT JOIN answers
     ON questions.id = answers.question_id
