@@ -55,14 +55,20 @@ def post_bulk_questions(file: UploadFile):
     questions = []
     for row in reader:
         answers = row['Answers']
+        tags = row['Tags']
         answers = answers.split('\n')
-        question = {'question': row['Question'], 'answers': [], 'difficulty': row['Difficulty']}
+        tags = tags.split(',')
+        question = {'question': row['Question'], 'answers': [], 'difficulty': row['Difficulty'], 'kanda': row['Kanda'], 'tags': []}
         for answer in answers:
             if 'correct' in answer:
                 answer = answer.removesuffix(' - correct')
                 question['answers'].append({'answer': answer, 'is_correct': True})
             else:
                 question['answers'].append({'answer': answer, 'is_correct': False})
+        for tag in tags:
+            tag = tag.strip()
+            if tag:
+                question['tags'].append(tag.strip())
         questions.append(question)
     create_questions_bulk(questions)
     print(questions)
