@@ -26,9 +26,9 @@ Message Queue: RabbitMQ
 Background Task Processing: Celery
 
 ## Feature List
-- Database tables for entities
-- API to create questions
-- Add questions through csv upload
+- Database tables for entities - Done
+- API to create questions - Done
+- Add questions through csv upload - Done
 - User authentication
 - Associate user and answer
 - Track user's answers
@@ -39,6 +39,10 @@ Background Task Processing: Celery
   - Bar chart: Correct, incorrect for tags
   - Stacked Bar chart: Total, correct, incorrect for difficulty levels
 - Share report on Linkedin, Twitter and Facebook
+- Hindi translation
+- Allow users to upvote or downvote a question
+- Allow users to contribute a question
+- Give an information icon in front of each question. This gives context about this question.
 
 ## More
 Along with PostgreSQL, we will also use MongoDB. This is only for demonstration purpose to understand which things are easy/difficult in PostgreSQL vs MongoDB.
