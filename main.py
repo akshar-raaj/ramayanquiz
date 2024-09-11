@@ -7,8 +7,10 @@ from fastapi import File, UploadFile
 
 from typing import Annotated
 
-from models import Question
-from database import create_question, create_questions_bulk
+from constants import DATA_STORE
+from models import Question, DataStore
+from database import create_question, create_questions_bulk, list_questions
+from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
 
 app = FastAPI()
 
@@ -34,13 +36,26 @@ def read_root():
 
 @app.get("/questions")
 def get_questions(limit: int | None = 20, offset: int | None = 0):
-    from database import get_questions
-    return get_questions(limit=limit, offset=offset)
+    if DATA_STORE == DataStore.POSTGRES.value:
+        questions = list_questions(limit=limit, offset=offset)
+    elif DATA_STORE == DataStore.MONGO.value:
+        questions = get_questions_mongo(limit=limit, offset=offset)
+        updated_questions = []
+        for question in questions:
+            updated_question = question.copy()
+            updated_question['id'] = str(updated_question['_id'])
+            del updated_question['_id']
+            updated_questions.append(updated_question)
+        questions = updated_questions
+    else:
+        raise Exception("Invalid data store")
+    return questions
 
 
 @app.post("/questions")
 def post_question(question: Question):
     question_id = create_question(**question.dict())
+    create_question_mongo(**question.dict())
     return {"question_id": question_id}
 
 
@@ -71,5 +86,6 @@ def post_bulk_questions(file: UploadFile):
                 question['tags'].append(tag.strip())
         questions.append(question)
     create_questions_bulk(questions)
+    create_questions_bulk_mongo(questions)
     print(questions)
     return {"status": "OK"}

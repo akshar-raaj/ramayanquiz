@@ -1,6 +1,12 @@
 # Pydantic models
 
+from enum import Enum
 from pydantic import BaseModel
+
+
+class DataStore(Enum):
+    POSTGRES = "postgres"
+    MONGO = "mongo"
 
 
 class Answer(BaseModel):
@@ -11,6 +17,6 @@ class Answer(BaseModel):
 class Question(BaseModel):
     question: str
     kanda: str | None = None
-    tags: list[str] | None = list()
     difficulty: str | None = None
+    tags: list[str] | None = list()
     answers: list[Answer] = list()

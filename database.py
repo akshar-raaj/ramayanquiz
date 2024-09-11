@@ -188,7 +188,7 @@ def create_questions_bulk(questions: list):
 
 # Write a function to retrieve the questions
 @retry_with_new_connection
-def get_questions(limit=20, offset=0):
+def list_questions(limit=20, offset=0):
     connection = get_database_connection()
     rows = []
     columns = []
