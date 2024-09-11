@@ -18,18 +18,15 @@ It has the following features:
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
-Programming Language: Python, a mature language enabling Rapid Application Development. Let's talk about Duck Typing! 
-
-API Framework: FastAPI, a modern and performant API framework.
-Transactional Database: PostgreSQL
-Standby Database: MongoDB
-SQL Toolkit: SQLAlchemy
-Unit Testing: Pytest
-CI/CD: Github Action
-Search backend: Elasticsearch
-Cache: Redis
-Message Queue: RabbitMQ
-Background Task Processing: Celery
+| Category | Option |
+|----|-----|
+| Programming Language | Python, a mature language enabling Rapid Application Development. Let's talk about Duck Typing! |
+| API Framework | FastAPI, a modern and performant API framework |
+| Transactional Database | PostgreSQL |
+| Standby Database | MongoDB |
+| SQL Toolkit | SQLAlchemy |
+| Unit Testing | Pytest |
+| CI/CD | Github Action |
 
 ## Feature List
 - Database tables for entities - Done
