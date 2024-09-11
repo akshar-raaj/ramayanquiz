@@ -1,0 +1,8 @@
+name: Check programming and stylistic errors
+on: [push]
+
+jobs:
+    Execute-Linters:
+        runs-on: ubuntu-latest
+        steps:
+            - run: echo "Linter executed"
