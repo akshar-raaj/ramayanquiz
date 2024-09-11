@@ -14,7 +14,7 @@ It has the following features:
 
 ## Tech Stack
 
-Programming Language: Python, a mature language enabling Rapid Application Development. Let's talk about Duck Typing!
+Programming Language: Python, a mature language enabling Rapid Application Development. Let's talk about Duck Typing! ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 API Framework: FastAPI, a modern and performant API framework.
 Transactional Database: PostgreSQL
 SQL Toolkit: SQLAlchemy
@@ -58,3 +58,6 @@ Implement websocket so that any new question added starts showing up immediately
 Add ML to predict the kanda and difficulty for a question
 
 Implement suggestions and question recommendations based on earlier questions attempted.
+
+Add badges:
+- pylint
