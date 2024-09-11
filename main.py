@@ -3,6 +3,8 @@ from io import StringIO
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import UploadFile
+
 from constants import DATA_STORE
 from models import Question, DataStore
 from database import create_question, create_questions_bulk, list_questions
