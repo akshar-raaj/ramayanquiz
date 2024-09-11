@@ -80,7 +80,7 @@ def retry_with_new_connection(func):
             # Running the query again will raise psycopg2.InterfaceError
             # which we are handling here
             return func(*args, **kwargs)
-        except psycopg2.InterfaceError as e:
+        except psycopg2.InterfaceError:
             print("handling interface error")
             get_database_connection(force=True)
             return func(*args, **kwargs)

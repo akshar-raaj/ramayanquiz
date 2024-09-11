@@ -18,7 +18,7 @@ def retry_with_new_connection(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except pymongo.errors.ConnectionFailure as e:
+        except pymongo.errors.ConnectionFailure:
             print("handling mongo connection exception")
             get_mongo_connection(force=True)
             return func(*args, **kwargs)
