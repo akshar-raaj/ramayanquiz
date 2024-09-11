@@ -17,5 +17,22 @@ jobs:
                   pip install pyflakes
             - name: Execute Pyflakes
               run: pyflakes *.py
-            - run: echo "Linter executed"
+            - run: echo "Pyflakes executed"
+              name: Echo
+    Pycodestyle:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.10'
+            - name: Install Pycodestyle
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pycodestyle
+            - name: Execute Pycodestyle
+              run: pycodestyle
+            - run: echo "Pycodestyle executed"
               name: Echo
