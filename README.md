@@ -1,5 +1,7 @@
 ## Overview
 
+[![Linting](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml/badge.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml)
+
 An application at the intersection of my 3 interests:
 - Software Engineering
 - Quizzing
