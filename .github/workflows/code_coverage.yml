@@ -1,5 +1,8 @@
 name: Code coverage
-on: [push]
+on:
+    push:
+        paths:
+            - '**.py'
 permissions:
     contents: write
 
