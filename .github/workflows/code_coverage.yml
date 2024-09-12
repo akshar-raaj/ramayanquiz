@@ -29,7 +29,7 @@ jobs:
             - name: Report
               run: coverage report
             - name: Generate badge
-              run: coverage-badge -o coverage.svg
+              run: coverage-badge -o coverage.svg -f
             - name: Commit coverage badge
               run: |
                   git config --local user.email "coverage@ramayanquiz.com"
