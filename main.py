@@ -1,11 +1,13 @@
 import csv
 from io import StringIO
-from fastapi import FastAPI
+from typing import Annotated
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import UploadFile
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from constants import DATA_STORE
+from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore
 from database import create_question, create_questions_bulk, list_questions
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
@@ -26,10 +28,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 @app.get("/_health")
 def read_root():
     return {"status": "OK"}
+
+
+@app.post("/token")
+def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    # Currently we only want to deal with an admin user
+    if form_data.password == ADMIN_PASSWORD and form_data.username == "admin":
+        return {"access_token": ADMIN_PASSWORD, "token_type": "bearer"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.get("/questions")
@@ -50,15 +63,22 @@ def get_questions(limit: int | None = 20, offset: int | None = 0):
     return questions
 
 
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    if token == ADMIN_PASSWORD:
+        return "admin"
+    else:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 @app.post("/questions")
-def post_question(question: Question):
+def post_question(user: Annotated[str, Depends(get_current_user)], question: Question):
     question_id = create_question(**question.dict())
     create_question_mongo(**question.dict())
     return {"question_id": question_id}
 
 
 @app.post("/questions/bulk")
-def post_bulk_questions(file: UploadFile):
+def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: UploadFile):
     f = file.file
     contents = f.read()
     csv_data = contents.decode('utf-8')
