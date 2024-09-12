@@ -23,5 +23,7 @@ jobs:
               run: coverage run --source=. -m pytest
             - name: Report
               run: coverage report
+            - name: Coverage Badge
+              uses: tj-actions/coverage-badge-py@v2
             - run: echo "Coverage executed"
               name: Echo
