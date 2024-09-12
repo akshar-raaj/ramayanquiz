@@ -1,6 +1,6 @@
 ## Overview
 
-[![Linting](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml/badge.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml)  [![Unit Tests](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/unit_tests.yml)
+[![Linting](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml/badge.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/linting.yml)  [![Unit Tests](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/unit_tests.yml) [![Test Coverage](https://github.com/akshar-raaj/ramayanquiz/blob/master/coverage.svg)](https://github.com/akshar-raaj/ramayanquiz/actions/workflows/code_coverage.yml)
 
 An application at the intersection of my 3 interests:
 - Software Engineering
