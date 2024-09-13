@@ -8,7 +8,7 @@ from fastapi import UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from constants import DATA_STORE, ADMIN_PASSWORD
-from models import Question, DataStore
+from models import Question, DataStore, Difficulty
 from database import create_question, create_questions_bulk, list_questions
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
 
@@ -46,9 +46,10 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 
 @app.get("/questions")
-def get_questions(limit: int | None = 20, offset: int | None = 0):
+def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None):
     if DATA_STORE == DataStore.POSTGRES.value:
-        questions = list_questions(limit=limit, offset=offset)
+        difficulty = difficulty.value if difficulty is not None else None
+        questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
     elif DATA_STORE == DataStore.MONGO.value:
         questions = get_questions_mongo(limit=limit, offset=offset)
         updated_questions = []

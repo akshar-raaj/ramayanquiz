@@ -9,6 +9,12 @@ class DataStore(Enum):
     MONGO = "mongo"
 
 
+class Difficulty(Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
 class Answer(BaseModel):
     answer: str
     is_correct: bool | None = False

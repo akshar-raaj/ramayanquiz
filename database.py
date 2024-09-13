@@ -188,21 +188,24 @@ def create_questions_bulk(questions: list):
 
 # Write a function to retrieve the questions
 @retry_with_new_connection
-def list_questions(limit=20, offset=0):
+def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
     connection = get_database_connection()
     rows = []
     columns = []
     # We need to perform limit on the parent table and fetch all child rows for each parent rows
     # This cannot be achieved with a simple limit clause
     # To restrict and ensure correct number of parent rows we need to fetch on parent table in a subquery
+    subquery = """
+        SELECT id, question, difficulty, kanda, tags
+        FROM questions
+    """
+    if difficulty is not None:
+        subquery += f" WHERE difficulty = '{difficulty}'"
+    subquery += f" ORDER BY id LIMIT {limit} OFFSET {offset}"
     query = f"""
     SELECT questions.id as id, question, difficulty, kanda, tags, answers.id as answer_id, answer, is_correct
     FROM (
-        SELECT id, question, difficulty, kanda, tags
-        FROM questions
-        ORDER BY id
-        LIMIT {limit}
-        OFFSET {offset}
+        {subquery}
     ) AS questions
     LEFT JOIN answers
     ON questions.id = answers.question_id
