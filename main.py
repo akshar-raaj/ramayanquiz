@@ -1,15 +1,21 @@
 import csv
+import time
+import asyncio
 from io import StringIO
 from typing import Annotated
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from fastapi import UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+from websockets.exceptions import ConnectionClosedError
+from starlette.websockets import WebSocketState
+
 from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty
-from database import create_question, create_questions_bulk, list_questions
+from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
 
 app = FastAPI()
@@ -108,3 +114,69 @@ def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: 
     create_questions_bulk_mongo(questions)
     print(questions)
     return {"status": "OK"}
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    recent_question_id = most_recent_question_id()
+    print(f"Most recent question id {recent_question_id}")
+    while True:
+        if websocket.client_state != WebSocketState.CONNECTED:
+            print("Websocket connection closed")
+            break
+        print("Checking recent questions")
+        recent_questions = recent_questions_count(recent_question_id)
+        if recent_questions > 0:
+            print(f"{recent_questions} new questions found")
+            try:
+                await websocket.send_text(f"{recent_questions} new questions added!")
+            # This would probably raise starlette.websockets.WebSocketDisconnect
+            except ConnectionClosedError:
+                print("Websocket connection closed")
+                break
+            recent_question_id = most_recent_question_id()
+        else:
+            print("No recent questions found")
+            pass
+        await asyncio.sleep(5)
+        # await websocket.send_text(f"Message text was: {data}")
+
+
+html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>
+"""
+
+@app.get("/html")
+async def get():
+    return HTMLResponse(html)
