@@ -247,3 +247,40 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
             grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct']})
 
     return grouped_answers
+
+
+@retry_with_new_connection
+def recent_questions_count(last_question_id: int):
+    connection = get_database_connection()
+    rows = []
+    query = f"""
+    SELECT count(questions.id)
+    FROM questions
+    WHERE questions.id > {last_question_id}
+    """
+    with connection:
+        with connection.cursor() as cursor:
+            # id is the primary key, hence has an index
+            # We are ordering on an indexed field
+            cursor.execute(query)
+            rows = cursor.fetchall()
+    return rows[0][0]
+
+
+@retry_with_new_connection
+def most_recent_question_id():
+    connection = get_database_connection()
+    rows = []
+    query = f"""
+    SELECT id
+    FROM questions
+    ORDER BY id DESC
+    LIMIT 1
+    """
+    with connection:
+        with connection.cursor() as cursor:
+            # id is the primary key, hence has an index
+            # We are ordering on an indexed field
+            cursor.execute(query)
+            rows = cursor.fetchall()
+    return rows[0][0]
