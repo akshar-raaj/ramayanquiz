@@ -17,6 +17,7 @@ from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
+from queueing import publish
 
 app = FastAPI()
 
@@ -81,6 +82,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 def post_question(user: Annotated[str, Depends(get_current_user)], question: Question):
     question_id = create_question(**question.dict())
     create_question_mongo(**question.dict())
+    publish('post_process', 'post_process', args=[question_id])
     return {"question_id": question_id}
 
 
@@ -110,9 +112,10 @@ def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: 
             if tag:
                 question['tags'].append(tag.strip())
         questions.append(question)
-    create_questions_bulk(questions)
+    inserted_ids = create_questions_bulk(questions)
     create_questions_bulk_mongo(questions)
-    print(questions)
+    for inserted_id in inserted_ids:
+        publish('post_process', 'post_process', args=[inserted_id])
     return {"status": "OK"}
 
 
