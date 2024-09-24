@@ -8,7 +8,7 @@ CREATE TYPE difficulty AS ENUM ('easy', 'medium', 'hard')
 """
 
 TYPE_KANDA_CREATE = """
-CREATE TYPE kanda AS ENUM ('Bala Kanda', 'Ayodhya Kanda', 'Aranya Kanda', 'Kishkinda Kanda', 'Sundara Kanda', 'Yuddha Kanda', 'Uttara Kanda')
+CREATE TYPE kanda AS ENUM ('Bala Kanda', 'Ayodhya Kanda', 'Aranya Kanda', 'Kishkinda Kanda', 'Sundara Kanda', 'Lanka Kanda', 'Uttara Kanda')
 """
 
 # Data type 'serial' is equivalent to defining an 'integer' with a 'sequence'.
@@ -58,7 +58,11 @@ DROP TYPE kanda
 connection = None
 
 
-def get_database_connection(force=False):
+def get_database_connection(force: bool = False):
+    """
+    Creates a database connection if needed and keeps it cached on a global variable.
+    We don't want to create a database connection, each time this function gets invoked.
+    """
     global connection
     if connection is None or force:
         connection = psycopg2.connect(
@@ -121,7 +125,9 @@ def _drop_tables():
 
 
 @retry_with_new_connection
-def create_question(question: str, kanda: str | None = None, tags: list[str] = list(), difficulty: str | None = None, answers: list[dict] = list()):
+def create_question(question: str, kanda: str | None = None, tags: list[str] | None = None, difficulty: str | None = None, answers: list[dict] | None = None) -> int:
+    tags = tags or []
+    answers = answers or []
     inserted_id = None
     connection = get_database_connection()
     # We have created a context.
@@ -142,16 +148,14 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] = l
             )
             inserted_id = cursor.fetchone()[0]
             if len(answers) > 0:
-                for answer in answers:
-                    cursor.execute(
-                        "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)",
-                        (inserted_id, answer["answer"], answer.get("is_correct", False)),
-                    )
+                answers_tuples = [(inserted_id, answer["answer"], answer.get("is_correct", False)) for answer in answers]
+                statement = "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)"
+                cursor.executemany(statement, answers_tuples)
     return inserted_id
 
 
 @retry_with_new_connection
-def fetch_question(question_id: int):
+def fetch_question(question_id: int) -> dict[str, str | int]:
     result = None
     columns = None
     connection = get_database_connection()
@@ -168,7 +172,7 @@ def fetch_question(question_id: int):
 
 
 @retry_with_new_connection
-def fetch_question_answers(question_id: int):
+def fetch_question_answers(question_id: int) -> list[dict[str, str | int]]:
     rows = []
     columns = None
     connection = get_database_connection()
@@ -187,7 +191,7 @@ def fetch_question_answers(question_id: int):
 
 
 @retry_with_new_connection
-def update_column_value(table_name: str, _id: int, column_name: str, column_value):
+def update_column_value(table_name: str, _id: int, column_name: str, column_value) -> bool:
     is_completed = False
     connection = get_database_connection()
     with connection:
@@ -199,17 +203,13 @@ def update_column_value(table_name: str, _id: int, column_name: str, column_valu
 
 
 @retry_with_new_connection
-def create_questions_bulk(questions: list):
+def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list[int]:
     """
     This is a bulk operation, either all question/answers would be inserted
     or no row would be inserted.
     """
     inserted_ids = []
     connection = get_database_connection()
-    # We have created a context.
-    # Hence transaction will be committed on successful execution of the block
-    # or else it would be rolled back
-    # *No need* to explicitly call connection.commit()
     with connection:
         with connection.cursor() as cursor:
             for question in questions:
@@ -319,7 +319,7 @@ def recent_questions_count(last_question_id: int):
 def most_recent_question_id():
     connection = get_database_connection()
     rows = []
-    query = f"""
+    query = """
     SELECT id
     FROM questions
     ORDER BY id DESC
