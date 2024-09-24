@@ -17,7 +17,7 @@ async def double(num):
     return num * 2
 
 # This is invalid as double is not a subroutine/function and is instead a coroutine
-#double(5)
+# double(5)
 
 # Need to call double using asyncio.Run
 # Passing the coroutine function is not sufficient

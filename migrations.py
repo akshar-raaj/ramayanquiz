@@ -29,4 +29,5 @@ def migrate():
             cursor.execute(QUESTIONS_ADD_COLUMN_TELUGU)
             cursor.execute(ANSWERS_ADD_COLUMN_TELUGU)
 
+
 migrate()

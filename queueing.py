@@ -13,6 +13,6 @@ channel.queue_declare(queue=QUEUE_NAME, durable=True)
 def publish(module_name: str, function_name: str, args: list):
     data = json.dumps({'module_name': module_name, 'function_name': function_name, 'args': args})
     channel.basic_publish(exchange='',
-                        routing_key=QUEUE_NAME,
-                        body=data)
+                          routing_key=QUEUE_NAME,
+                          body=data)
     print(f" [x] Published {data}")
