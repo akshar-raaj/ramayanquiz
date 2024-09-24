@@ -39,7 +39,7 @@ def callback(ch, method, properties, body):
     except Exception:
         return None
     try:
-        result = func(*args)
+        func(*args)
     except Exception:
         pass
     print(" [x] Done")

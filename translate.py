@@ -7,9 +7,7 @@ Currently tested with the following:
 """
 
 from openai import OpenAI
-from constants import OPENAI_API_KEY, CHATGPT_MODEL
-
-import requests
+from constants import CHATGPT_MODEL
 
 
 def translate(english_text: str, translate_to: str = 'Hindi'):
