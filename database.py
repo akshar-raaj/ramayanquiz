@@ -151,6 +151,54 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] = l
 
 
 @retry_with_new_connection
+def fetch_question(question_id: int):
+    result = None
+    columns = None
+    connection = get_database_connection()
+    with connection:
+        with connection.cursor() as cursor:
+            statement = "SELECT id, question from questions WHERE id=%s"
+            cursor.execute(statement, (question_id,))
+            result = cursor.fetchone()
+            columns = [col.name for col in cursor.description]
+    if result is None:
+        return {}
+    row = {k: v for k, v in zip(columns, result)}
+    return row
+
+
+@retry_with_new_connection
+def fetch_question_answers(question_id: int):
+    rows = []
+    columns = None
+    connection = get_database_connection()
+    with connection:
+        with connection.cursor() as cursor:
+            statement = "SELECT a.id, a.answer from answers a WHERE a.question_id=%s"
+            cursor.execute(statement, (question_id,))
+            rows = cursor.fetchall()
+            columns = [col.name for col in cursor.description]
+    if rows == []:
+        return []
+    result = []
+    for row in rows:
+        result.append({k: v for k, v in zip(columns, row)})
+    return result
+
+
+@retry_with_new_connection
+def update_column_value(table_name: str, _id: int, column_name: str, column_value):
+    is_completed = False
+    connection = get_database_connection()
+    with connection:
+        with connection.cursor() as cursor:
+            statement = f'UPDATE {table_name} SET {column_name}=%s where id=%s'
+            cursor.execute(statement, (column_value, _id,))
+            is_completed = True
+    return is_completed
+
+
+@retry_with_new_connection
 def create_questions_bulk(questions: list):
     """
     This is a bulk operation, either all question/answers would be inserted
