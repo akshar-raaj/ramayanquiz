@@ -6,9 +6,33 @@ Currently tested with the following:
 - Telugu
 """
 
+from openai import OpenAI
+from constants import OPENAI_API_KEY, CHATGPT_MODEL
+
 import requests
 
 
-def translate(english_text: str, translate_to: str = 'hindi'):
+def translate(english_text: str, translate_to: str = 'Hindi'):
     print(f"Translating {english_text} to {translate_to}")
+    client = OpenAI()
+    try:
+        completion = client.chat.completions.create(
+            model=CHATGPT_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {
+                    "role": "user",
+                    "content": f"Translate the following text to {translate_to}: {english_text}"
+                }
+            ]
+        )
+    except Exception:
+        print("Error in making request to OpenAI")
+        return
+    try:
+        content = completion.choices[0].message.content
+        return content
+    except Exception:
+        print("Error in parsing OpenAI result")
+        return
     print(f"Translated {english_text} to {translate_to}")
