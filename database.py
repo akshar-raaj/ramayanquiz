@@ -244,21 +244,22 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
     # This cannot be achieved with a simple limit clause
     # To restrict and ensure correct number of parent rows we need to fetch on parent table in a subquery
     subquery = """
-        SELECT id, question, difficulty, kanda, tags
+        SELECT id 
         FROM questions
     """
     if difficulty is not None:
         subquery += f" WHERE difficulty = '{difficulty}'"
     subquery += f" ORDER BY id LIMIT {limit} OFFSET {offset}"
     query = f"""
-    SELECT questions.id as id, question, difficulty, kanda, tags, answers.id as answer_id, answer, is_correct
-    FROM (
-        {subquery}
-    ) AS questions
+    SELECT questions.id as id, question, difficulty, kanda, tags, answers.id as answer_id, answer, is_correct,
+           question_hindi, question_telugu, answer_hindi, answer_telugu
+    FROM questions
     LEFT JOIN answers
     ON questions.id = answers.question_id
+    WHERE questions.id in ({subquery})
     ORDER BY questions.id, answers.id
     """
+    print(query)
     with connection:
         with connection.cursor() as cursor:
             # id is the primary key, hence has an index
@@ -284,15 +285,17 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
     # Group the answers for same question
     grouped_answers = []
     first_question = questions[0]
-    grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct']}]})
+    grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']}],
+                            'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi']})
     for index in range(1, len(questions)):
         question = questions[index]
         if question['id'] == first_question['id']:
-            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct']})
+            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct'], 'answer_hindi': question['answer_hindi'], 'answer_telugu': question['answer_telugu']})
         else:
             first_question = question
-            grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': []})
-            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct']})
+            grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': [],
+                                    'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi']})
+            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct'], 'answer_hindi': question['answer_hindi'], 'answer_telugu': question['answer_telugu']})
 
     return grouped_answers
 
