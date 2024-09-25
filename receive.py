@@ -18,6 +18,7 @@ def callback(ch, method, properties, body):
     body = body.decode()
     # Expecting the body to be json with the following keys:
     # full function name, args
+    print(f"Received {body}")
     try:
         body = json.loads(body)
         assert 'module_name' in body
@@ -25,6 +26,7 @@ def callback(ch, method, properties, body):
         assert 'args' in body
     except Exception:
         # Log as an exception
+        ch.basic_ack(delivery_tag=method.delivery_tag)
         return None
     module_name = body['module_name']
     function_name = body['function_name']
@@ -46,7 +48,7 @@ def callback(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-channel.basic_qos(prefetch_count=1)
+channel.basic_qos(prefetch_count=3)
 channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback)
 
 channel.start_consuming()
