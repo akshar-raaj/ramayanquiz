@@ -55,6 +55,7 @@ def test_create_tables(mocked_get_connection):
     _create_tables()
     assert mocked_get_connection.called
 
+
 @patch('database.get_database_connection')
 def test_drop_tables(mocked_get_connection):
     # Need MagicMock instead of Mock because connection is used as a context manager
