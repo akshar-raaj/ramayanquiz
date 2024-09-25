@@ -5,3 +5,4 @@ pytest
 pyflakes
 pymongo
 openai
+pika
