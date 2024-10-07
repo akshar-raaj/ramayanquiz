@@ -1,3 +1,12 @@
+"""
+This module creates services/helpers to interact with MongoDB.
+
+The functions shouldn't make any assumptions about the application layer classes and objects.
+It should deal with Mongosh like statements.
+
+Unlike database.py, this module doesn't have any create table or create type statements. That's precisely because
+MongoDB is schemaless and we do not need to create a schema in advance.
+"""
 import datetime
 import pymongo
 from pymongo import MongoClient
@@ -10,7 +19,9 @@ mongo_connection = None
 def get_mongo_connection(force=False):
     global mongo_connection
     if mongo_connection is None or force:
-        mongo_connection = MongoClient(MONGODB_CONNECTION_STRING)
+        # MongoClient doesn't raise an exception even if the connection string is invalid.
+        # No exception handling can be perfomed here.
+        mongo_connection = MongoClient(MONGODB_CONNECTION_STRING, serverSelectionTimeoutMS=5000)
     return mongo_connection
 
 
@@ -23,6 +34,30 @@ def retry_with_new_connection(func):
             get_mongo_connection(force=True)
             return func(*args, **kwargs)
     return wrapper
+
+
+def _create_tables():
+    """
+    This is to keep consistency with database._create_tables.
+    Ideally it should be named _create_collections.
+    Although, with Mongo we don't need to create a collection before inserting documents.
+    However, it comes handy if we want document schema validation.
+    """
+    connection = get_mongo_connection()
+    db = connection.ramayanquiz
+    db.create_collection('questions')
+
+
+def _drop_tables():
+    """
+    This is to keep consistency with database._drop_tables.
+    Ideally it should be called _drop_collections.
+    We want a clean database.
+    Hence, all the collections should be removed.
+    """
+    connection = get_mongo_connection()
+    db = connection.ramayanquiz
+    db.questions.drop()
 
 
 @retry_with_new_connection
