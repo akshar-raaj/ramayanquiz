@@ -1,6 +1,7 @@
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 import psycopg2
+from psycopg2.errors import UniqueViolation
 
 
 TYPE_DIFFICULTY_CREATE = """
@@ -142,10 +143,14 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] | N
             # There could be exceptions because of constraint violation etc.
             # However, we want the client to be mature and send clean data to this function
             # The client should have exception handler while invoking this function.
-            cursor.execute(
-                "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
-                (question, kanda, tags, difficulty),
-            )
+            try:
+                cursor.execute(
+                    "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (question, kanda, tags, difficulty),
+                )
+            except UniqueViolation:
+                print(f"Unique constraint violation while creating question {question}")
+                return inserted_id
             inserted_id = cursor.fetchone()[0]
             if len(answers) > 0:
                 answers_tuples = [(inserted_id, answer["answer"], answer.get("is_correct", False)) for answer in answers]
@@ -205,24 +210,29 @@ def update_column_value(table_name: str, _id: int, column_name: str, column_valu
 @retry_with_new_connection
 def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list[int]:
     """
-    This is a bulk operation, either all question/answers would be inserted
-    or no row would be inserted.
+    This is a bulk operation.
+    It handles unique violation error, in case a question violates unique constraint, that question would
+    be skipped, while the other questions would be processed.
     """
     inserted_ids = []
     connection = get_database_connection()
-    with connection:
-        with connection.cursor() as cursor:
-            for question in questions:
+    for question in questions:
+        with connection:
+            with connection.cursor() as cursor:
                 # Client should perform data validation and cleansing, and send appropriate data.
                 question_text = question['question']
                 kanda = question.get('kanda')
                 tags = question.get('tags', [])
                 difficulty = question.get('difficulty')
                 answers = question.get('answers', [])
-                cursor.execute(
-                    "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (question_text, kanda, tags, difficulty),
-                )
+                try:
+                    cursor.execute(
+                        "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
+                        (question_text, kanda, tags, difficulty),
+                    )
+                except UniqueViolation:
+                    print(f"Unique constraint violation while creating question {question_text}")
+                    continue
                 inserted_id = cursor.fetchone()[0]
                 inserted_ids.append(inserted_id)
                 if len(answers) > 0:

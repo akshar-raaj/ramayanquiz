@@ -80,6 +80,10 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 @app.post("/questions")
 def post_question(user: Annotated[str, Depends(get_current_user)], question: Question):
     question_id = create_question(**question.dict())
+    if question_id is None:
+        raise HTTPException(status_code=400, detail="Bad Request")
+    # TODO: The data is already captured till this point
+    # Asynchronously insert it into Mongo, either using Airflow scheduler or put it on the Rabbitmq queue
     create_question_mongo(**question.dict())
     publish('post_process', 'post_process', args=[question_id])
     return {"question_id": question_id}
