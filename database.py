@@ -1,13 +1,24 @@
+"""
+This module creates services/helpers to interact with PostgreSQL database.
+
+The functions shouldn't make any assumptions about the application layer classes and objects.
+It should deal with raw SQL statements.
+
+Had we been using ORM, it would deal with ORM statements.
+"""
+
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 import psycopg2
-from psycopg2.errors import UniqueViolation
+from psycopg2.errors import UniqueViolation, OperationalError
 
 
+# User defined type
 TYPE_DIFFICULTY_CREATE = """
 CREATE TYPE difficulty AS ENUM ('easy', 'medium', 'hard')
 """
 
+# User defined type
 TYPE_KANDA_CREATE = """
 CREATE TYPE kanda AS ENUM ('Bala Kanda', 'Ayodhya Kanda', 'Aranya Kanda', 'Kishkinda Kanda', 'Sundara Kanda', 'Lanka Kanda', 'Uttara Kanda')
 """
@@ -63,16 +74,24 @@ def get_database_connection(force: bool = False):
     """
     Creates a database connection if needed and keeps it cached on a global variable.
     We don't want to create a database connection, each time this function gets invoked.
+
+    We possibly want to reuse the connection throughout the lifecycle of the application
+    unless the server closes the connection, in which case we will use `force` and recreate the connection.
     """
     global connection
     if connection is None or force:
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-        )
+        try:
+            connection = psycopg2.connect(
+                host=DB_HOST,
+                port=DB_PORT,
+                dbname=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+            )
+        except OperationalError as e:
+            # TODO: Add logger.error
+            print(f"Exception {e}")
+            return None
     return connection
 
 
@@ -139,10 +158,6 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] | N
         with connection.cursor() as cursor:
             # Both database execute() commands are part of a single transaction.
             # It would be rolled back automatically by the context manager in case of any exception
-            # We considered adding an exception handler in following lines.
-            # There could be exceptions because of constraint violation etc.
-            # However, we want the client to be mature and send clean data to this function
-            # The client should have exception handler while invoking this function.
             try:
                 cursor.execute(
                     "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
@@ -248,6 +263,10 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
 @retry_with_new_connection
 def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
     connection = get_database_connection()
+    if connection is None:
+        # TODO: Add logger.error
+        print("Could not get a connection, cannot fetch questions")
+        return []
     rows = []
     columns = []
     # We need to perform limit on the parent table and fetch all child rows for each parent rows
