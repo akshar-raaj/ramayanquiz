@@ -10,6 +10,7 @@ MongoDB is schemaless and we do not need to create a schema in advance.
 import datetime
 import pymongo
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError, BulkWriteError
 
 from constants import MONGODB_CONNECTION_STRING
 
@@ -41,11 +42,13 @@ def _create_tables():
     This is to keep consistency with database._create_tables.
     Ideally it should be named _create_collections.
     Although, with Mongo we don't need to create a collection before inserting documents.
-    However, it comes handy if we want document schema validation.
+    However, it comes handy if we want document schema validation, or probably to create a unique
+    index on the collection.
     """
     connection = get_mongo_connection()
     db = connection.ramayanquiz
     db.create_collection('questions')
+    db.questions.create_index('question', unique=True)
 
 
 def _drop_tables():
@@ -61,7 +64,7 @@ def _drop_tables():
 
 
 @retry_with_new_connection
-def create_question(question: str, kanda: str | None = None, difficulty: str | None = None, tags: list[str] = list(), answers: list[dict] = list()):
+def create_question(question: str, kanda: str | None = None, difficulty: str | None = None, tags: list[str] | None = None, answers: list[dict] | None = None):
     connection = get_mongo_connection()
     db = connection.ramayanquiz
     collection = db.questions
@@ -72,23 +75,36 @@ def create_question(question: str, kanda: str | None = None, difficulty: str | N
         # Instead kanda and tags fields would be set on the document with null value, thus still needing storage
         # To use Mongo schemaless nature, we should check if they are not null and then only set them on the document
         # But that makes our application logic unnecessarily nested.
-        "kanda": kanda,
-        "tags": tags,
-        "difficulty": difficulty,
+        # Commenting them to utilise the Mongo schemaless nature
+        # "kanda": kanda,
+        # "tags": tags,
+        # "difficulty": difficulty,
         # MongoDB is schemaless, thus there is no way to set a field/column which can be applied on all documents
         # at insertion. Hence, we have to explicitly create and send it from the application layer
         "created_at": datetime.datetime.utcnow(),
         "updated_at": datetime.datetime.utcnow(),
-        "answers": answers
+        # "answers": answers
     }
+    if kanda:
+        document["kanda"] = kanda
+    if tags:
+        document["tags"] = tags
+    if difficulty:
+        document["difficulty"] = difficulty
+    if answers:
+        document["answers"] = answers
     # Compare this with database.create_question()
     # Only one query needed in a document database, while two queries are needed for two different tables.
-    inserted_record = collection.insert_one(document)
+    try:
+        inserted_record = collection.insert_one(document)
+    except DuplicateKeyError:
+        print(f"Unique constraint violation while creating question {question}")
+        return None
     return inserted_record.inserted_id
 
 
 @retry_with_new_connection
-def create_questions_bulk(questions: list):
+def create_questions_bulk(questions: list[dict[str, str | list]]):
     inserted_ids = []
     connection = get_mongo_connection()
     db = connection.ramayanquiz
@@ -99,30 +115,39 @@ def create_questions_bulk(questions: list):
         kanda = question.get('kanda')
         tags = question.get('tags', [])
         difficulty = question.get('difficulty')
-        answers = question['answers']
+        answers = question.get('answers', [])
         document = {
             "question": question_text,
-            "kanda": kanda,
-            "tags": tags,
-            "difficulty": difficulty,
             # Will be stored as ISODate in Mongo
             # Mongo strips the timezone info from the passed date.
             "created_at": datetime.datetime.utcnow(),
             "updated_at": datetime.datetime.utcnow(),
-            "answers": answers
         }
+        if kanda:
+            document["kanda"] = kanda
+        if tags:
+            document["tags"] = tags
+        if difficulty:
+            document["difficulty"] = difficulty
+        if answers:
+            document["answers"] = answers
         documents.append(document)
-    inserted_ids = collection.insert_many(documents).inserted_ids
+    try:
+        inserted_ids = collection.insert_many(documents).inserted_ids
+    except BulkWriteError:
+        print("Error in bulk writing")
+        return None
     return inserted_ids
 
 
 @retry_with_new_connection
-def get_questions(limit=1, offset=0):
+def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None):
     """
     Compare this with list_questions() for postgres i.e database.list_questions.
     You would notice this function is much simpler compared to list_questions().
-    1. No database join needed.
+    1. No database join needed. Thus database query is simpler.
     2. No application grouping of question and answers needed.
+       Thus application layer is potentially simpler during retrieval.
 
     Relational databases have impedance mismatch while document database don't.
     """
@@ -134,4 +159,8 @@ def get_questions(limit=1, offset=0):
     # pymongo can convert from Mongo types to Python native types.
     # Example: From Mongo ISODate to Python datetime
     documents = collection.find().skip(offset).limit(limit)
+    if difficulty is not None:
+        documents = collection.find({'difficulty': difficulty}).skip(offset).limit(limit)
+    # Be warned that if a document doesn't have some fields, then this result too wouldn't
+    # have such fields. Example 'tags' could be missing on a document.
     return list(documents)
