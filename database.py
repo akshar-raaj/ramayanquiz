@@ -261,7 +261,7 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
 
 # Write a function to retrieve the questions
 @retry_with_new_connection
-def list_questions(limit: int = 20, offset: int = 0, difficulty: str = None):
+def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None):
     connection = get_database_connection()
     if connection is None:
         # TODO: Add logger.error
