@@ -11,6 +11,8 @@ import datetime
 import pymongo
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, BulkWriteError
+from bson import ObjectId
+from bson.errors import InvalidId
 
 from constants import MONGODB_CONNECTION_STRING
 
@@ -101,6 +103,31 @@ def create_question(question: str, kanda: str | None = None, difficulty: str | N
         print(f"Unique constraint violation while creating question {question}")
         return None
     return inserted_record.inserted_id
+
+
+@retry_with_new_connection
+def fetch_question(question_id: str):
+    try:
+        object_id = ObjectId(question_id)
+    except InvalidId:
+        print(f"Invalid object id: {question_id}")
+        return None
+    connection = get_mongo_connection()
+    db = connection.ramayanquiz
+    cursor = db.questions.find({"_id": object_id})
+    rows = list(cursor)
+    if len(rows) == 1:
+        return rows[0]
+    else:
+        return None
+
+
+@retry_with_new_connection
+def update_column_value(collection_name: str, _id: str, field_name: str, field_value):
+    connection = get_mongo_connection()
+    db = connection.ramayanquiz
+    collection = db[collection_name]
+    collection.update_one({'_id': ObjectId(_id)}, {"$set": {field_name: field_value}})
 
 
 @retry_with_new_connection

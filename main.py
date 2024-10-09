@@ -15,7 +15,7 @@ from starlette.websockets import WebSocketState
 from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
-from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, get_questions as get_questions_mongo
+from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
 
 app = FastAPI()
