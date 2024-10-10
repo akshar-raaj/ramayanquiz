@@ -4,7 +4,6 @@ from io import StringIO
 from typing import Annotated
 from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 
 from fastapi import UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -146,44 +145,3 @@ async def websocket_endpoint(websocket: WebSocket):
             print("No recent questions found")
             pass
         await asyncio.sleep(5)
-        # await websocket.send_text(f"Message text was: {data}")
-
-
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat</title>
-    </head>
-    <body>
-        <h1>WebSocket Chat</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Send</button>
-        </form>
-        <ul id='messages'>
-        </ul>
-        <script>
-            var ws = new WebSocket("ws://localhost:8000/ws");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
-            }
-        </script>
-    </body>
-</html>
-"""
-
-
-@app.get("/html")
-async def get():
-    return HTMLResponse(html)

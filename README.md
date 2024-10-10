@@ -34,19 +34,19 @@ It has the following features:
 - Database tables for entities - Done
 - API to create questions - Done
 - Add questions through csv upload - Done
-- User authentication
-- Associate user and answer
-- Track user's answers
+- Secure the API - Done
+- Persist user answers to localstorage - Done
 - User answer report:
   - Pie chart: Unattempted, attempted
-  - Pie chart: Correct, Incorrect
-  - Bar chart: Correct, incorrect for difficulty levels
+  - Pie chart: Correct, Incorrect - Done
+  - Bar chart: Correct, incorrect for difficulty levels - Done
   - Bar chart: Correct, incorrect for tags
   - Stacked Bar chart: Total, correct, incorrect for difficulty levels
 - Share report on Linkedin, Twitter and Facebook
 - Hindi translation
 - Allow users to upvote or downvote a question
 - Allow users to contribute a question
+- Before contributing, search if a similar question exists
 - Give an information icon in front of each question. This gives context about this question.
 
 ## More
@@ -66,3 +66,5 @@ Implement suggestions and question recommendations based on earlier questions at
 
 Add badges:
 - pylint
+
+Mobile Application
