@@ -163,7 +163,7 @@ def create_questions_bulk(questions: list[dict[str, str | list]]):
             inserted_ids.append(inserted_id)
         except DuplicateKeyError:
             print(f"Mongo: Unique constraint violation while creating question {question_text}")
-            skipped_rows.append(index+1)
+            skipped_rows.append(index + 1)
     return inserted_ids, skipped_rows
 
 
