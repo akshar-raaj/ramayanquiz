@@ -90,8 +90,9 @@ def get_database_connection(force: bool = False):
             )
         except OperationalError as e:
             # TODO: Add logger.error
-            print(f"Exception {e}")
-            return None
+            # Though this logger is not required, clients should perform their own logging.
+            print(f"Exception while creating PostgreSQL connection {e}")
+            raise e
     return connection
 
 
@@ -105,7 +106,7 @@ def retry_with_new_connection(func):
             # which we are handling here
             return func(*args, **kwargs)
         except psycopg2.InterfaceError:
-            print("handling interface error")
+            print("handling interface error and recreating the connection")
             get_database_connection(force=True)
             return func(*args, **kwargs)
     return wrapper
@@ -144,6 +145,8 @@ def _drop_tables():
             cursor.execute(TYPE_KANDA_DROP)
 
 
+# TODO: Mark type annotation for difficulty as models.Difficulty.
+# Similarly, create an enum for kanda and use it as type hint
 @retry_with_new_connection
 def create_question(question: str, kanda: str | None = None, tags: list[str] | None = None, difficulty: str | None = None, answers: list[dict] | None = None) -> int:
     tags = tags or []
@@ -163,9 +166,12 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] | N
                     "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
                     (question, kanda, tags, difficulty),
                 )
-            except UniqueViolation:
+            # Should we reraise this exception or silently digest it.
+            except UniqueViolation as e:
                 print(f"Unique constraint violation while creating question {question}")
-                return inserted_id
+                raise e
+            # There can be other exceptions too like NotNullViolation but we don't want to catch, log and re-raise everything.
+            # Instead such exceptions would just be raised and clients of this helper should catch such exceptions.
             inserted_id = cursor.fetchone()[0]
             if len(answers) > 0:
                 answers_tuples = [(inserted_id, answer["answer"], answer.get("is_correct", False)) for answer in answers]
@@ -176,6 +182,10 @@ def create_question(question: str, kanda: str | None = None, tags: list[str] | N
 
 @retry_with_new_connection
 def fetch_question(question_id: int) -> dict[str, str | int]:
+    """
+    Might raise InvalidTextRepresentation, but not handling it here.
+    In case client sends an invalid input that would happen and clients should deal with it then.
+    """
     result = None
     columns = None
     connection = get_database_connection()
@@ -211,18 +221,6 @@ def fetch_question_answers(question_id: int) -> list[dict[str, str | int]]:
 
 
 @retry_with_new_connection
-def update_column_value(table_name: str, _id: int, column_name: str, column_value) -> bool:
-    is_completed = False
-    connection = get_database_connection()
-    with connection:
-        with connection.cursor() as cursor:
-            statement = f'UPDATE {table_name} SET {column_name}=%s where id=%s'
-            cursor.execute(statement, (column_value, _id,))
-            is_completed = True
-    return is_completed
-
-
-@retry_with_new_connection
 def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list[int]:
     """
     This is a bulk operation.
@@ -230,8 +228,13 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
     be skipped, while the other questions would be processed.
     """
     inserted_ids = []
+    skipped_rows = []
     connection = get_database_connection()
-    for question in questions:
+    # We need to create every question in a separate transaction
+    # because we want partial success.
+    # If we use a single transaction, any unique constraint violation will cause entire one transaction
+    # to rollback, thereby not allowing any row to be created.
+    for index, question in enumerate(questions):
         with connection:
             with connection.cursor() as cursor:
                 # Client should perform data validation and cleansing, and send appropriate data.
@@ -247,6 +250,7 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
                     )
                 except UniqueViolation:
                     print(f"Unique constraint violation while creating question {question_text}")
+                    skipped_rows.append(index + 1)
                     continue
                 inserted_id = cursor.fetchone()[0]
                 inserted_ids.append(inserted_id)
@@ -256,24 +260,20 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
                             "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)",
                             (inserted_id, answer["answer"], answer.get("is_correct", False)),
                         )
-    return inserted_ids
+    return inserted_ids, skipped_rows
 
 
 # Write a function to retrieve the questions
 @retry_with_new_connection
 def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None):
     connection = get_database_connection()
-    if connection is None:
-        # TODO: Add logger.error
-        print("Could not get a connection, cannot fetch questions")
-        return []
     rows = []
     columns = []
     # We need to perform limit on the parent table and fetch all child rows for each parent rows
     # This cannot be achieved with a simple limit clause
     # To restrict and ensure correct number of parent rows we need to fetch on parent table in a subquery
     subquery = """
-        SELECT id 
+        SELECT id
         FROM questions
     """
     if difficulty is not None:
@@ -288,7 +288,6 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
     WHERE questions.id in ({subquery})
     ORDER BY questions.id, answers.id
     """
-    print(query)
     with connection:
         with connection.cursor() as cursor:
             # id is the primary key, hence has an index
