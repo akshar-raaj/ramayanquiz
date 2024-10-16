@@ -10,7 +10,7 @@ MongoDB is schemaless and we do not need to create a schema in advance.
 import datetime
 import pymongo
 from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError, BulkWriteError
+from pymongo.errors import DuplicateKeyError
 from bson import ObjectId
 from bson.errors import InvalidId
 
@@ -99,9 +99,9 @@ def create_question(question: str, kanda: str | None = None, difficulty: str | N
     # Only one query needed in a document database, while two queries are needed for two different tables.
     try:
         inserted_record = collection.insert_one(document)
-    except DuplicateKeyError:
+    except DuplicateKeyError as e:
         print(f"Unique constraint violation while creating question {question}")
-        return None
+        raise e
     return inserted_record.inserted_id
 
 
@@ -133,11 +133,11 @@ def update_column_value(collection_name: str, _id: str, field_name: str, field_v
 @retry_with_new_connection
 def create_questions_bulk(questions: list[dict[str, str | list]]):
     inserted_ids = []
+    skipped_rows = []
     connection = get_mongo_connection()
     db = connection.ramayanquiz
     collection = db.questions
-    documents = []
-    for question in questions:
+    for index, question in enumerate(questions):
         question_text = question['question']
         kanda = question.get('kanda')
         tags = question.get('tags', [])
@@ -158,13 +158,13 @@ def create_questions_bulk(questions: list[dict[str, str | list]]):
             document["difficulty"] = difficulty
         if answers:
             document["answers"] = answers
-        documents.append(document)
-    try:
-        inserted_ids = collection.insert_many(documents).inserted_ids
-    except BulkWriteError:
-        print("Error in bulk writing")
-        return None
-    return inserted_ids
+        try:
+            inserted_id = collection.insert_one(document).inserted_id
+            inserted_ids.append(inserted_id)
+        except DuplicateKeyError:
+            print(f"Mongo: Unique constraint violation while creating question {question_text}")
+            skipped_rows.append(index+1)
+    return inserted_ids, skipped_rows
 
 
 @retry_with_new_connection
