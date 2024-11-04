@@ -26,6 +26,8 @@ It has the following features:
 | API Framework | FastAPI, a modern and performant API framework |
 | Transactional Database | PostgreSQL |
 | Standby Database | MongoDB |
+| Message Broker | RabbitMQ |
+| Workflow Management | Airflow |
 | SQL Toolkit | SQLAlchemy |
 | Unit Testing | Pytest |
 | CI/CD | Github Action |
