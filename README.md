@@ -5,14 +5,9 @@
 An application at the intersection of my 3 interests:
 - Software Engineering
 - Quizzing
-- Religion
+- Ramacharitamanas(रामचरितमानस)
 
 This application drives ramayanquiz.com backend.
-
-It has the following features:
-- Create a question
-- Associate choices with a question
-- Mark one of the choices as correct answer for the question
 
 ## Tech Stack
 
