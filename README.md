@@ -40,7 +40,7 @@ This application drives ramayanquiz.com backend.
   - Bar chart: Correct, incorrect for tags
   - Stacked Bar chart: Total, correct, incorrect for difficulty levels
 - Share report on Linkedin, Twitter and Facebook
-- Hindi translation
+- Hindi translation - Done
 - Allow users to upvote or downvote a question
 - Allow users to contribute a question
 - Before contributing, search if a similar question exists
@@ -60,8 +60,5 @@ Implement websocket so that any new question added starts showing up immediately
 Add ML to predict the kanda and difficulty for a question
 
 Implement suggestions and question recommendations based on earlier questions attempted.
-
-Add badges:
-- pylint
 
 Mobile Application
