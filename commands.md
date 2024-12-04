@@ -39,3 +39,14 @@ This tells the pid of the ssh process.
 The following systemctl command gives the same pid as well.
 
     sudo systemctl status ssh.service
+
+
+## Local Setup
+
+Postgres start
+
+    docker run --name ramayanquiz-postgres -e POSTGRES_PASSWORD=thisissparta -p 5432:5432 postgres
+
+Application server start
+
+    docker run --name ramayanquiz-server -p 8002:8000 ramayanquiz
