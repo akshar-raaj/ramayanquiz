@@ -14,6 +14,7 @@ from starlette.websockets import WebSocketState
 from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
+from database import health as db_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
 
@@ -37,7 +38,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @app.get("/_health")
-def read_root():
+def _health():
+    db_health()
     return {"status": "OK"}
 
 
@@ -114,8 +116,9 @@ def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: 
             if tag:
                 question['tags'].append(tag.strip())
         questions.append(question)
-    inserted_ids = create_questions_bulk(questions)
-    create_questions_bulk_mongo(questions)
+    inserted_ids, skipped_rows = create_questions_bulk(questions)
+    # TODO: Send an email to admin notifying about inserted_ids and skipped_rows
+    mongo_inserted_ids, mongo_skipped_rows = create_questions_bulk_mongo(questions)
     for inserted_id in inserted_ids:
         publish('post_process', 'post_process', args=[inserted_id])
     return {"status": "OK"}
