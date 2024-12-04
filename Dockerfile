@@ -8,12 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install the dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the application code
-# TODO: Remove copying it, instead mount it as a volume.
-# This will allow modifying code without rebuilding the image
-COPY . .
+RUN pip install -r requirements.txt
 
 # Expose the port that the application will run on
 # It doesn't actually publish the port, but instead works as a documentation
