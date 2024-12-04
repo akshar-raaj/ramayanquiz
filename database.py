@@ -112,6 +112,15 @@ def retry_with_new_connection(func):
     return wrapper
 
 
+# Healthcheck for database
+@retry_with_new_connection
+def health():
+    with get_database_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            cursor.fetchall()
+
+
 @retry_with_new_connection
 def _create_tables():
     # Helper function to create the tables.
