@@ -25,7 +25,7 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install coverage coverage-badge
             - name: Execute coverage
-              run: coverage run --source=. -m pytest
+              run: coverage run -m pytest
             - name: Report
               run: coverage report
             - name: Generate badge
