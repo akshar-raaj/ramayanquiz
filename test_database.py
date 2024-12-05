@@ -3,7 +3,7 @@ from psycopg2 import InterfaceError
 from psycopg2.errors import OperationalError
 
 
-from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables
+from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 
@@ -88,3 +88,22 @@ def test_drop_tables(mocked_get_connection):
     assert mocked_get_connection.called
     assert mocked_connection.cursor.called
     assert mocked_cursor.execute.call_count == 4
+
+
+@patch("database.get_database_connection")
+def test_health(mocked_get_connection):
+    mocked_connection = MagicMock()
+    mocked_get_connection.return_value = mocked_connection
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
+    mocked_cursor = MagicMock()
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+    mocked_connection.cursor.return_value = mocked_cursor
+
+    health()
+
+    assert mocked_cursor.execute.called
+    assert mocked_cursor.fetchall.called
