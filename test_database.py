@@ -3,7 +3,7 @@ from psycopg2 import InterfaceError
 from psycopg2.errors import OperationalError
 
 
-from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question
+from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question, fetch_question, fetch_question_answers
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 
@@ -130,3 +130,41 @@ def test_create_question(mocked_get_connection):
     # One executemany call for create the answers
     assert mocked_cursor.executemany.call_count == 1
     assert mocked_cursor.fetchone.called
+
+
+@patch("database.get_database_connection")
+def test_fetch_question(mocked_get_connection):
+    mocked_connection = MagicMock()
+    mocked_get_connection.return_value = mocked_connection
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
+    mocked_cursor = MagicMock()
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+    mocked_connection.cursor.return_value = mocked_cursor
+
+    fetch_question(question_id=1)
+
+    assert mocked_cursor.execute.call_count == 1
+    assert mocked_cursor.fetchone.call_count == 1
+
+
+@patch("database.get_database_connection")
+def test_fetch_question_answers(mocked_get_connection):
+    mocked_connection = MagicMock()
+    mocked_get_connection.return_value = mocked_connection
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
+    mocked_cursor = MagicMock()
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+    mocked_connection.cursor.return_value = mocked_cursor
+
+    fetch_question_answers(question_id=1)
+
+    assert mocked_cursor.execute.call_count == 1
+    assert mocked_cursor.fetchall.call_count == 1
