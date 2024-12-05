@@ -1,8 +1,8 @@
 """
 This module creates services/helpers to interact with PostgreSQL database.
 
-The functions shouldn't make any assumptions about the application layer classes and objects.
-It should deal with raw SQL statements.
+The functions shouldn't make any assumptions about the application layer
+classes and objects. It should deal with raw SQL statements.
 
 Had we been using ORM, it would deal with ORM statements.
 """
