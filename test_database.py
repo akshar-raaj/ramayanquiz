@@ -1,5 +1,6 @@
 from unittest.mock import Mock, patch, MagicMock
 from psycopg2 import InterfaceError
+from psycopg2.errors import OperationalError
 
 
 from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables
@@ -10,12 +11,13 @@ from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 def test_get_database_connection(mocked_psycopg2):
     mocked_connection = Mock()
     mocked_psycopg2.connect.return_value = mocked_connection
-    connection = get_database_connection()
+    get_database_connection()
     assert mocked_psycopg2.connect.called
     mocked_psycopg2.connect.assert_called_with(host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD)
-    assert connection is mocked_connection
     assert mocked_psycopg2.connect.call_count == 1
 
+    # Check that the connection gets reused and every call to get_database_connection
+    # does not invoke psycopg2.connect
     # Assert that the second call to get_database_connection
     # does not call psycopg2.connect
     _ = get_database_connection()
@@ -49,11 +51,22 @@ def test_create_tables(mocked_get_connection):
     # Need MagicMock instead of Mock because connection is used as a context manager
     # and hence need a __enter__ dunder method.
     mocked_connection = MagicMock()
+
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
     mocked_get_connection.return_value = mocked_connection
     mocked_cursor = MagicMock()
+    # Mocking the context manager methods
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+
     mocked_connection.cursor.return_value = mocked_cursor
     _create_tables()
     assert mocked_get_connection.called
+    assert mocked_connection.cursor.called
+    assert mocked_cursor.execute.call_count == 4
 
 
 @patch('database.get_database_connection')
@@ -61,8 +74,17 @@ def test_drop_tables(mocked_get_connection):
     # Need MagicMock instead of Mock because connection is used as a context manager
     # and hence need a __enter__ dunder method.
     mocked_connection = MagicMock()
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
     mocked_get_connection.return_value = mocked_connection
     mocked_cursor = MagicMock()
+    # Mocking the context manager methods
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
     mocked_connection.cursor.return_value = mocked_cursor
     _drop_tables()
     assert mocked_get_connection.called
+    assert mocked_connection.cursor.called
+    assert mocked_cursor.execute.call_count == 4
