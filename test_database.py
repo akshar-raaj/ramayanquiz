@@ -3,7 +3,7 @@ from psycopg2 import InterfaceError
 from psycopg2.errors import OperationalError
 
 
-from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health
+from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 
@@ -107,3 +107,26 @@ def test_health(mocked_get_connection):
 
     assert mocked_cursor.execute.called
     assert mocked_cursor.fetchall.called
+
+
+@patch("database.get_database_connection")
+def test_create_question(mocked_get_connection):
+    mocked_connection = MagicMock()
+    mocked_get_connection.return_value = mocked_connection
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
+    mocked_cursor = MagicMock()
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+    mocked_connection.cursor.return_value = mocked_cursor
+
+    create_question("Who was Lord Rama's father?", "Balakanda", ["Rama", "Ayodhya"],
+                    answers=[{"answer": "King Dasrath", "is_correct": True}, {"answer": "Lord Janaka", "is_correct": False}])
+
+    # One db call to create the question.
+    assert mocked_cursor.execute.call_count == 1
+    # One executemany call for create the answers
+    assert mocked_cursor.executemany.call_count == 1
+    assert mocked_cursor.fetchone.called
