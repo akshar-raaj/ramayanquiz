@@ -1,6 +1,5 @@
 from unittest.mock import Mock, patch, MagicMock
 from psycopg2 import InterfaceError
-from psycopg2.errors import OperationalError
 
 
 from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question, fetch_question, fetch_question_answers, recent_questions_count
