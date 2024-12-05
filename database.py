@@ -3,6 +3,7 @@ This module creates services/helpers to interact with PostgreSQL database.
 
 The functions shouldn't make any assumptions about the application layer
 classes and objects. It should deal with raw SQL statements.
+However, seeing the module allows user to understand the application data model.
 
 Had we been using ORM, it would deal with ORM statements.
 """
