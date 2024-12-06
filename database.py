@@ -9,6 +9,7 @@ Had we been using ORM, it would deal with ORM statements.
 """
 
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+from models import Difficulty, Kanda
 
 import psycopg2
 from psycopg2.errors import UniqueViolation, OperationalError
@@ -158,14 +159,14 @@ def _drop_tables():
 # TODO: Mark type annotation for difficulty as models.Difficulty.
 # Similarly, create an enum for kanda and use it as type hint
 @retry_with_new_connection
-def create_question(question: str, kanda: str | None = None, tags: list[str] | None = None, difficulty: str | None = None, answers: list[dict] | None = None) -> int:
+def create_question(question: str, kanda: Kanda | None = None, tags: list[str] | None = None, difficulty: Difficulty | None = None, answers: list[dict] | None = None) -> int:
     tags = tags or []
     answers = answers or []
+    kanda = kanda and kanda.value
+    difficulty = difficulty and difficulty.value
     inserted_id = None
     connection = get_database_connection()
-    # We have created a context.
-    # Hence transaction will be committed on successful execution of the block
-    # or else it would be rolled back
+    # Context will take care of commiting or rolling back the transaction
     # No need to explicitly call connection.commit()
     with connection:
         with connection.cursor() as cursor:
