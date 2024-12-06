@@ -3,6 +3,8 @@ import json
 
 from pika.exceptions import StreamLostError
 
+from constants import RABBITMQ_HOST
+
 
 rabbit_connection = None
 QUEUE_NAME = 'translate-hindi'
@@ -11,7 +13,7 @@ QUEUE_NAME = 'translate-hindi'
 def get_rabbit_connection(force=False):
     global rabbit_connection
     if rabbit_connection is None or force:
-        rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters('127.0.0.1'))
+        rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     return rabbit_connection
 
 
