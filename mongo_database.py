@@ -15,6 +15,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from constants import MONGODB_CONNECTION_STRING
+from models import Kanda, Difficulty
 
 mongo_connection = None
 
@@ -66,7 +67,7 @@ def _drop_tables():
 
 
 @retry_with_new_connection
-def create_question(question: str, kanda: str | None = None, difficulty: str | None = None, tags: list[str] | None = None, answers: list[dict] | None = None):
+def create_question(question: str, kanda: Kanda | None = None, difficulty: Difficulty | None = None, tags: list[str] | None = None, answers: list[dict] | None = None):
     connection = get_mongo_connection()
     db = connection.ramayanquiz
     collection = db.questions
@@ -88,11 +89,11 @@ def create_question(question: str, kanda: str | None = None, difficulty: str | N
         # "answers": answers
     }
     if kanda:
-        document["kanda"] = kanda
+        document["kanda"] = kanda and kanda.value
     if tags:
         document["tags"] = tags
     if difficulty:
-        document["difficulty"] = difficulty
+        document["difficulty"] = difficulty and difficulty.value
     if answers:
         document["answers"] = answers
     # Compare this with database.create_question()
