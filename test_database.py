@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch, MagicMock
 from psycopg2 import InterfaceError
 
 
-from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question, fetch_question, fetch_question_answers, recent_questions_count
+from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question, fetch_question, fetch_question_answers, recent_questions_count, most_recent_question_id
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 
@@ -184,5 +184,23 @@ def test_recent_questions_count(mocked_get_connection):
 
     recent_questions_count(last_question_id=1)
 
+    assert mocked_cursor.execute.call_count == 1
+    assert mocked_cursor.fetchall.call_count == 1
+
+
+@patch('database.get_database_connection')
+def test_most_recent_question_id(mocked_get_connection):
+    mocked_connection = MagicMock()
+    mocked_get_connection.return_value = mocked_connection
+    # Mocking the context manager methods
+    mocked_connection.__enter__.return_value = mocked_connection
+    mocked_connection.__exit__.return_value = None
+
+    mocked_cursor = MagicMock()
+    mocked_cursor.__enter__.return_value = mocked_cursor
+    mocked_cursor.__exit__.return_value = None
+    mocked_connection.cursor.return_value = mocked_cursor
+
+    most_recent_question_id()
     assert mocked_cursor.execute.call_count == 1
     assert mocked_cursor.fetchall.call_count == 1
