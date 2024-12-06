@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch, MagicMock
 from psycopg2 import InterfaceError
 
 
+from models import Kanda
 from database import get_database_connection, retry_with_new_connection, _create_tables, _drop_tables, health, create_question, fetch_question, fetch_question_answers, recent_questions_count, most_recent_question_id
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
@@ -121,7 +122,7 @@ def test_create_question(mocked_get_connection):
     mocked_cursor.__exit__.return_value = None
     mocked_connection.cursor.return_value = mocked_cursor
 
-    create_question("Who was Lord Rama's father?", "Balakanda", ["Rama", "Ayodhya"],
+    create_question("Who was Lord Rama's father?", Kanda.BALA_KANDA, ["Rama", "Ayodhya"],
                     answers=[{"answer": "King Dasrath", "is_correct": True}, {"answer": "Lord Janaka", "is_correct": False}])
 
     # One db call to create the question.
