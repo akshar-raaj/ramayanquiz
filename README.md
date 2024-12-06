@@ -7,25 +7,28 @@ An application at the intersection of my 3 interests:
 - Quizzing
 - Ramacharitamanas(रामचरितमानस)
 
-This application drives ramayanquiz.com backend.
+This application drives [api.ramayanquiz.com](https://api.ramayanquiz.com/_health). See [API Docs](https://api.ramayanquiz.com/docs).
 
 ## Tech Stack
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
-![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/Rabbitmq-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
 | Category | Option |
 |----|-----|
 | Programming Language | Python, a mature language enabling Rapid Application Development. Let's talk about Duck Typing! |
 | API Framework | FastAPI, a modern and performant API framework |
-| Transactional Database | PostgreSQL |
-| Standby Database | MongoDB |
-| Message Broker | RabbitMQ |
+| Transactional Database | PostgreSQL, battle-tested relational database |
+| Standby Database | MongoDB, a document database, allows RAD at the expense of data integrity and guarantees |
+| Message Broker | RabbitMQ, flexible message broker with more capabilities than a simple message queue |
 | Workflow Management | Airflow |
 | SQL Toolkit | SQLAlchemy |
-| Unit Testing | Pytest |
-| CI/CD | Github Action |
+| Unit Testing | Pytest, simple and extensible testing framework |
+| CI/CD | Github Action, allows CI and CD. Simpler than Jenkins |
 
 ## Feature List
 - Database tables for entities - Done
