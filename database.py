@@ -89,6 +89,7 @@ def get_database_connection(force: bool = False):
                 dbname=DB_NAME,
                 user=DB_USER,
                 password=DB_PASSWORD,
+                application_name='core'
             )
         except OperationalError as e:
             # TODO: Add logger.error
