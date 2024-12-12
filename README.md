@@ -30,6 +30,29 @@ This application drives [api.ramayanquiz.com](https://api.ramayanquiz.com/_healt
 | Unit Testing | Pytest, simple and extensible testing framework |
 | CI/CD | Github Action, allows CI and CD. Simpler than Jenkins |
 
+## Setup
+
+Ensure the relevant data stores exist. We need the following:
+- PostgreSQL
+- MongoDB
+- RabbitMQ
+
+The following Docker commands should help you setup these data stores if they don't already exist.
+
+    docker container run --name ramayanquiz-postgres -p 5432:5432 --volume ramayanquiz-postgres:/var/lib/postgresql/data -d postgres
+
+    docker container run --name ramayanquiz-mongo -p 27017:27017 --volume ramayanquiz-mongo:/data/db -d mongo
+
+    docker run --name ramayanquiz-rabbitmq -p 5672:5672 -p 15672:15672 -v ramayanquiz-rabbitmq:/var/lib/rabbitmq -d rabbitmq:3.13-management
+
+Ensure to create a `.env` file with appropriate values. Use `.env.example` for reference.
+
+Start the web application container.
+
+    docker run -d --name ramayanquiz -p 8000:8000 -v .:/app ramayanquiz
+
+Ensure the container is running properly. Check http://localhost:8000/docs.
+
 ## Feature List
 - Database tables for entities - Done
 - API to create questions - Done
