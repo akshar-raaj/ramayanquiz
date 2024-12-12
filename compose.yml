@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - "ramayanquiz-postgres:/var/lib/postgresql/data"
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - "ramayanquiz-mongo:/data/db"
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - "ramayanquiz-rabbitmq:/var/lib/rabbitmq"
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+
+
+volumes:
+  ramayanquiz-postgres:
+    external: true
+  ramayanquiz-mongo:
+    external: true
+  ramayanquiz-rabbitmq:
+    external: true
