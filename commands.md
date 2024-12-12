@@ -45,8 +45,23 @@ The following systemctl command gives the same pid as well.
 
 Postgres start
 
-    docker run --name ramayanquiz-postgres -e POSTGRES_PASSWORD=thisissparta -p 5432:5432 postgres
+    docker container run --name ramayanquiz-postgres -p 5432:5432 --volume ramayanquiz:/var/lib/postgresql/data postgres
+
+Mongo start
+
+    docker container run --name ramayanquiz-mongo -p 27017:27017 --volume ramayanquiz-mongo:/data/db mongo
+
+RabbitMQ start
+
+    docker run --name ramayanquiz-rabbitmq -p 5672:5672 -p 15672:15672 -v ramayanquiz-rabbitmq:/var/lib/rabbitmq rabbitmq:3.13-management
 
 Application server start
 
     docker run --name ramayanquiz-server -p 8002:8000 ramayanquiz
+
+
+## Server
+
+Application server start
+
+    docker run -d --name ramayanquiz --network="host" -v .:/app ramayanquiz
