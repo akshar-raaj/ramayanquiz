@@ -36,5 +36,6 @@ def publish(module_name: str, function_name: str, args: list, queue_name: str = 
     data = json.dumps({'module_name': module_name, 'function_name': function_name, 'args': args})
     channel.basic_publish(exchange='',
                           routing_key=QUEUE_NAME,
-                          body=data)
+                          body=data,
+                          properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
     print(f" [x] Published {data}")
