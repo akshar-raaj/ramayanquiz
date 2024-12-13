@@ -292,7 +292,7 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
         subquery += f" WHERE difficulty = '{difficulty}'"
     subquery += f" ORDER BY id LIMIT {limit} OFFSET {offset}"
     query = f"""
-    SELECT questions.id as id, question, difficulty, kanda, tags, answers.id as answer_id, answer, is_correct,
+    SELECT questions.id as id, question, difficulty, kanda, tags, information, answers.id as answer_id, answer, is_correct,
            question_hindi, question_telugu, answer_hindi, answer_telugu
     FROM questions
     LEFT JOIN answers
@@ -307,8 +307,6 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
             cursor.execute(query)
             rows = cursor.fetchall()
             columns = [column.name for column in cursor.description]
-    # Let's apply two pointers just for fun
-    # instead of using zip
     if len(rows) == 0:
         return rows
     questions = []
@@ -322,19 +320,23 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
             value_index += 1
             column_index += 1
         questions.append(row_dict)
+    # Let's apply two pointers just for fun
+    # instead of using zip
     # Group the answers for same question
     grouped_answers = []
     first_question = questions[0]
-    grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']}],
-                            'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi']})
+    grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'],
+                            'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi'], 'information': first_question['information'],
+                            'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']}]})
     for index in range(1, len(questions)):
         question = questions[index]
         if question['id'] == first_question['id']:
             grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct'], 'answer_hindi': question['answer_hindi'], 'answer_telugu': question['answer_telugu']})
         else:
             first_question = question
-            grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'], 'answers': [],
-                                    'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi']})
+            grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'],
+                                    'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi'], 'information': first_question['information'],
+                                    'answers': []})
             grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct'], 'answer_hindi': question['answer_hindi'], 'answer_telugu': question['answer_telugu']})
 
     return grouped_answers
