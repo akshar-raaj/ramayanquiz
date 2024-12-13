@@ -7,7 +7,6 @@ from constants import RABBITMQ_HOST
 
 
 rabbit_connection = None
-QUEUE_NAME = 'translate-hindi'
 
 
 def get_rabbit_connection(force=False):
@@ -29,13 +28,14 @@ def retry_with_new_connection(func):
 
 
 @retry_with_new_connection
-def publish(module_name: str, function_name: str, args: list, queue_name: str = QUEUE_NAME):
+def publish(module_name: str, function_name: str, args: list, queue_name: str):
     connection = get_rabbit_connection()
     channel = connection.channel()
-    channel.queue_declare(queue=QUEUE_NAME, durable=True)
+    channel.queue_declare(queue=queue_name, durable=True)
     data = json.dumps({'module_name': module_name, 'function_name': function_name, 'args': args})
     channel.basic_publish(exchange='',
-                          routing_key=QUEUE_NAME,
+                          routing_key=queue_name,
                           body=data,
                           properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
+    channel.close()
     print(f" [x] Published {data}")
