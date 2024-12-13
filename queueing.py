@@ -3,7 +3,7 @@ import json
 
 from pika.exceptions import StreamLostError
 
-from constants import RABBITMQ_HOST
+from constants import RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD
 
 
 rabbit_connection = None
@@ -12,7 +12,8 @@ rabbit_connection = None
 def get_rabbit_connection(force=False):
     global rabbit_connection
     if rabbit_connection is None or force:
-        rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+        rabbit_connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, credentials=credentials))
     return rabbit_connection
 
 
