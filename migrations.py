@@ -10,6 +10,10 @@ QUESTIONS_ADD_COLUMN_TELUGU = """
     ALTER TABLE questions ADD IF NOT EXISTS question_telugu text;
 """
 
+QUESTIONS_ADD_COLUMN_INFORMATION = """
+    ALTER TABLE questions ADD IF NOT EXISTS information text;
+"""
+
 ANSWERS_ADD_COLUMN_HINDI = """
     ALTER TABLE answers ADD IF NOT EXISTS answer_hindi text;
 """
@@ -28,6 +32,8 @@ def migrate():
             cursor.execute(ANSWERS_ADD_COLUMN_HINDI)
             cursor.execute(QUESTIONS_ADD_COLUMN_TELUGU)
             cursor.execute(ANSWERS_ADD_COLUMN_TELUGU)
+            cursor.execute(QUESTIONS_ADD_COLUMN_INFORMATION)
 
 
-migrate()
+if __name__ == '__main__':
+    migrate()
