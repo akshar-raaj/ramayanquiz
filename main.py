@@ -86,7 +86,7 @@ def post_question(user: Annotated[str, Depends(get_current_user)], question: Que
     # TODO: The data is already captured till this point
     # Asynchronously insert it into Mongo, either using Airflow scheduler or put it on the Rabbitmq queue
     create_question_mongo(**question.dict())
-    publish('post_process', 'post_process', args=[question_id])
+    publish('post_process', 'post_process', args=[question_id], queue_name='process-question')
     return {"question_id": question_id}
 
 
@@ -120,7 +120,7 @@ def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: 
     # TODO: Send an email to admin notifying about inserted_ids and skipped_rows
     mongo_inserted_ids, mongo_skipped_rows = create_questions_bulk_mongo(questions)
     for inserted_id in inserted_ids:
-        publish('post_process', 'post_process', args=[inserted_id])
+        publish('post_process', 'post_process', args=[inserted_id], queue_name='process-question')
     return {"status": "OK"}
 
 
