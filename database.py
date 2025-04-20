@@ -127,7 +127,7 @@ def health():
     with get_database_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1;")
-            cursor.fetchall()
+            return cursor.fetchall()
 
 
 @retry_with_new_connection
