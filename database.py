@@ -41,6 +41,9 @@ CREATE TABLE questions (
 )
 """
 
+# We have deliberately not used UNIQUE on answer column.
+# Different questions can have same answers.
+# However we can keep a unique on question_id and answer.
 TABLE_ANSWER_CREATE = """
 CREATE TABLE answers (
     id serial PRIMARY KEY,
@@ -69,6 +72,9 @@ TYPE_KANDA_DROP = """
 DROP TYPE kanda
 """
 
+# Global variables pollute the namespace and there is a possibility to overwrite them.
+# Hence, we should avoid using global variables.
+# Refactor the code to use a class with singleton
 connection = None
 
 
@@ -157,7 +163,6 @@ def _drop_tables():
             cursor.execute(TYPE_KANDA_DROP)
 
 
-# TODO: Mark type annotation for difficulty as models.Difficulty.
 # Similarly, create an enum for kanda and use it as type hint
 @retry_with_new_connection
 def create_question(question: str, kanda: Kanda | None = None, tags: list[str] | None = None, difficulty: Difficulty | None = None, answers: list[dict] | None = None) -> int:
