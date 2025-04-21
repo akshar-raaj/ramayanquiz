@@ -178,7 +178,6 @@ def _drop_tables():
             cursor.execute(TYPE_KANDA_DROP)
 
 
-# Similarly, create an enum for kanda and use it as type hint
 @retry_with_new_connection
 def create_question(question: str, kanda: Kanda | None = None, tags: list[str] | None = None, difficulty: Difficulty | None = None, answers: list[dict] | None = None) -> int:
     tags = tags or []
@@ -190,6 +189,8 @@ def create_question(question: str, kanda: Kanda | None = None, tags: list[str] |
     # Context will take care of commiting or rolling back the transaction
     # No need to explicitly call connection.commit()
     with connection:
+        # Again, context closes the cursor
+        # We close the cursor for efficient memory and resource handling
         with connection.cursor() as cursor:
             # Both database execute() commands are part of a single transaction.
             # It would be rolled back automatically by the context manager in case of any exception
@@ -221,6 +222,10 @@ def fetch_question(question_id: int) -> dict[str, str | int]:
     result = None
     columns = None
     connection = get_database_connection()
+    # No inserts happening here, hence no need for a commit or rollback.
+    # Thus, ideally no need for connection context.
+    # However for consistency with other functions, we use connection context
+    # Also defensive programming.
     with connection:
         with connection.cursor() as cursor:
             statement = "SELECT id, question from questions WHERE id=%s"
