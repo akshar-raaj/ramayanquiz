@@ -4,6 +4,10 @@ from enum import Enum
 from pydantic import BaseModel
 
 
+class StatusResponse(BaseModel):
+    status: str
+
+
 class DataStore(Enum):
     POSTGRES = "postgres"
     MONGO = "mongo"

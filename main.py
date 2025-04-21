@@ -12,7 +12,7 @@ from websockets.exceptions import ConnectionClosedError
 from starlette.websockets import WebSocketState
 
 from constants import DATA_STORE, ADMIN_PASSWORD
-from models import Question, DataStore, Difficulty
+from models import Question, DataStore, Difficulty, StatusResponse
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
 from database import health as db_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
@@ -38,7 +38,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @app.get("/_health")
-def _health():
+def _health() -> StatusResponse:
     db_health()
     return {"status": "OK"}
 
