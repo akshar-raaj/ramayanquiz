@@ -8,6 +8,8 @@ However, seeing the module allows user to understand the application data model.
 Had we been using ORM, it would deal with ORM statements.
 """
 
+from typing import List, Tuple
+
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 from models import Difficulty, Kanda
 
@@ -126,7 +128,7 @@ def retry_with_new_connection(func):
 
 # Healthcheck for database
 @retry_with_new_connection
-def health():
+def health() -> List[Tuple[int]]:
     with get_database_connection() as connection:
         # A cursor is needed to execute queries and deal with the result set.
         # It encapsulates things like fetch, fetchall, fetchmany etc.
