@@ -147,8 +147,13 @@ def _create_tables():
     # aren't closing the connection.
     # A context wraps a transaction:
     # if the context exits with success the transaction is committed, if it exits with an exception the transaction is rolled back
+    # Hence, we don't have to deal with explicit connection.commit() and connection.rollback()
+    # It's taken care of automatically because of the context manager.
     with get_database_connection() as connection:
         # Context closes the cursor, hence we don't need to worry about closing it
+        # Although it's a client side cursor, and hence can be GCed and don't need to be explicitly closed
+        # for efficient memory and resource handling, still for completeness keep it in the context manager
+        # so that cursor.close() gets called automatically on exit of context.
         with connection.cursor() as cursor:
             cursor.execute(TYPE_DIFFICULTY_CREATE)
             cursor.execute(TYPE_KANDA_CREATE)
