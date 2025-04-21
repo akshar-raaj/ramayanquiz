@@ -85,6 +85,9 @@ def get_database_connection(force: bool = False):
 
     We possibly want to reuse the connection throughout the lifecycle of the application
     unless the server closes the connection, in which case we will use `force` and recreate the connection.
+
+    `connection` maintains a session with the database.
+    The database operations like query execution and result fetching are controlled by a cursor.
     """
     global connection
     if connection is None or force:
@@ -125,6 +128,11 @@ def retry_with_new_connection(func):
 @retry_with_new_connection
 def health():
     with get_database_connection() as connection:
+        # A cursor is needed to execute queries and deal with the result set.
+        # It encapsulates things like fetch, fetchall, fetchmany etc.
+        # We are creating a client-side cursor and not a server-side cursor.
+        # Server-side cursor can be more memory efficient at the expense of more round trips i.e. more latency.
+        # Client-side servers fetch all rows in a single round trip. Hence is network efficient but can be memory inefficient.
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1;")
             return cursor.fetchall()
