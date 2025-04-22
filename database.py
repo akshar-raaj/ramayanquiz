@@ -203,6 +203,7 @@ def create_question(question: str, kanda: Kanda | None = None, tags: list[str] |
             # Should we reraise this exception or silently digest it.
             except UniqueViolation as e:
                 print(f"Unique constraint violation while creating question {question}")
+                # TODO: The ideal way would be to raise a QuestionAlreadyExists, an application specific exception from here.
                 raise e
             # There can be other exceptions too like NotNullViolation but we don't want to catch, log and re-raise everything.
             # Instead such exceptions would just be raised and clients of this helper should catch such exceptions.

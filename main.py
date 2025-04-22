@@ -2,10 +2,13 @@ import csv
 import asyncio
 from io import StringIO
 from typing import Annotated
+
+from psycopg2.errors import UniqueViolation
+
 from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import UploadFile
+from fastapi import UploadFile, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from websockets.exceptions import ConnectionClosedError
@@ -81,11 +84,21 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-@app.post("/questions")
+@app.post("/questions", status_code=status.HTTP_201_CREATED)
 def post_question(user: Annotated[str, Depends(get_current_user)], question: Question):
-    question_id = create_question(**question.dict())
+    try:
+        question_id = create_question(**question.dict())
+    except UniqueViolation:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Question already exists")
+    except Exception:
+        # There ca be different type of exceptions like UniqueViolation etc.
+        # The Pydantic model can be written in a way to avoid Null violations, type violations etc.
+        # But still, if the underlying create_question() changes, it can raise any exception.
+        # The API should always fail gracefully. Hence, log it and return a proper error
+        # TODO: Log this exception
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error ocrurred")
     if question_id is None:
-        raise HTTPException(status_code=400, detail="Bad Request")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error ocurred")
     # TODO: The data is already captured till this point
     # Asynchronously insert it into Mongo, either using Airflow scheduler or put it on the Rabbitmq queue
     create_question_mongo(**question.dict())

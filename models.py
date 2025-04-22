@@ -55,7 +55,7 @@ class Question(BaseModel):
     kanda: Kanda | None = None
     difficulty: Difficulty | None = None
     tags: list[str] | None = list()
-    answers: list[Answer] = list()
+    answers: list[Answer]
 
 
 class QuestionResponse(Question):
