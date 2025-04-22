@@ -13,7 +13,7 @@ def test_get_database_connection(mocked_psycopg2):
     mocked_psycopg2.connect.return_value = mocked_connection
     get_database_connection()
     assert mocked_psycopg2.connect.called
-    mocked_psycopg2.connect.assert_called_with(host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD)
+    mocked_psycopg2.connect.assert_called_with(host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, application_name='core', connect_timeout=5)
     assert mocked_psycopg2.connect.call_count == 1
 
     # Check that the connection gets reused and every call to get_database_connection
