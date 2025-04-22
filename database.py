@@ -8,7 +8,7 @@ However, seeing the module allows user to understand the application data model.
 Had we been using ORM, it would deal with ORM statements.
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 from models import Difficulty, Kanda
@@ -100,7 +100,8 @@ def get_database_connection(force: bool = False):
                 dbname=DB_NAME,
                 user=DB_USER,
                 password=DB_PASSWORD,
-                application_name='core'
+                application_name='core',
+                connect_timeout=5
             )
         except OperationalError as e:
             # TODO: Add logger.error
@@ -300,9 +301,8 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
     return inserted_ids, skipped_rows
 
 
-# Write a function to retrieve the questions
 @retry_with_new_connection
-def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None):
+def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None) -> list[dict[str, Any]]:
     connection = get_database_connection()
     rows = []
     columns = []
