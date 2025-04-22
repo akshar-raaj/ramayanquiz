@@ -1,3 +1,8 @@
+# Define some variables
+# The scope is the current process.
+# It doesn't export environment variables and are instead local variables.
+# Thus they are not visible to child processes
+# Best practice to always quote the variables, to avoid subtle bugs with whitespace, empty strings etc
 IMAGE_NAME="ramayanquiz"
 CONTAINER_BLUE="ramayanquiz-blue"
 CONTAINER_GREEN="ramayanquiz-green"
@@ -12,6 +17,7 @@ function deploy_green() {
     # The blue container could be mapped to either port 8000 or 8001 on the host
     # The green container has to be mapped to the other port
     echo "Extracting blue container port"
+    # Command substitution using $
     CONTAINER_BLUE_PORT=$(docker port $CONTAINER_BLUE | awk -F'[: ]+' '/->/ {print $NF}' | head -n 1)
     echo "Blue container port: $CONTAINER_BLUE_PORT"
     if [ "$CONTAINER_BLUE_PORT" = "8000" ]; then
