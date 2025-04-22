@@ -12,7 +12,7 @@ from websockets.exceptions import ConnectionClosedError
 from starlette.websockets import WebSocketState
 
 from constants import DATA_STORE, ADMIN_PASSWORD
-from models import Question, DataStore, Difficulty, StatusResponse
+from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
 from database import health as db_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
@@ -56,7 +56,7 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 
 @app.get("/questions")
-def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None):
+def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None) -> list[QuestionResponse]:
     if DATA_STORE == DataStore.POSTGRES.value:
         difficulty = difficulty.value if difficulty is not None else None
         questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
