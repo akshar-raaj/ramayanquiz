@@ -39,8 +39,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @app.get("/_health")
 def _health() -> StatusResponse:
-    db_health()
-    return {"status": "OK"}
+    try:
+        db_health()
+    except Exception:
+        return StatusResponse(status="Down")
+    return StatusResponse(status="Up")
 
 
 @app.post("/token")
