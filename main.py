@@ -16,7 +16,7 @@ from starlette.websockets import WebSocketState
 
 from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse
-from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count
+from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count, fetch_question, fetch_question_answers
 from database import health as db_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
@@ -85,7 +85,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
 
 @app.post("/questions", status_code=status.HTTP_201_CREATED)
-def post_question(user: Annotated[str, Depends(get_current_user)], question: Question):
+def post_question(user: Annotated[str, Depends(get_current_user)], question: Question) -> QuestionResponse:
     try:
         question_id = create_question(**question.dict())
     except UniqueViolation:
@@ -103,7 +103,10 @@ def post_question(user: Annotated[str, Depends(get_current_user)], question: Que
     # Asynchronously insert it into Mongo, either using Airflow scheduler or put it on the Rabbitmq queue
     create_question_mongo(**question.dict())
     publish('post_process', 'post_process', args=[question_id], queue_name='process-question')
-    return {"question_id": question_id}
+    question_dict = fetch_question(question_id)
+    answers = fetch_question_answers(question_id=question_id)
+    question_dict['answers'] = answers
+    return question_dict
 
 
 @app.post("/questions/bulk")
