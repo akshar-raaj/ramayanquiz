@@ -1,5 +1,6 @@
 import csv
 import asyncio
+import logging
 from io import StringIO
 from typing import Annotated
 
@@ -20,6 +21,13 @@ from database import create_question, create_questions_bulk, list_questions, mos
 from database import health as db_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
+
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(level=logging.INFO)
+
+logger.info("Bootstrapping")
 
 app = FastAPI()
 
@@ -42,10 +50,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @app.get("/_health")
 def _health() -> StatusResponse:
+    logger.info("Health check")
     try:
         db_health()
     except Exception:
-        return StatusResponse(status="Down")
+        # Severity error keeps the log shorter. It still signifies that an error/exception has ocurred
+        # without emitting the traceback
+        logger.error("Database is down!")
+        return StatusResponse(status="Database down")
+    logger.info("Health check passed")
     return StatusResponse(status="Up")
 
 
