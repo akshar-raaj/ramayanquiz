@@ -111,22 +111,26 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
 @app.post("/questions", status_code=status.HTTP_201_CREATED)
 def post_question(user: Annotated[str, Depends(get_current_user)], question: Question) -> QuestionResponse:
+    logger.info("Creating question")
     try:
         question_id = create_question(**question.dict())
     except UniqueViolation:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Question already exists")
-    except Exception:
+    except Exception as e:
         # There ca be different type of exceptions like UniqueViolation etc.
         # The Pydantic model can be written in a way to avoid Null violations, type violations etc.
         # But still, if the underlying create_question() changes, it can raise any exception.
         # The API should always fail gracefully. Hence, log it and return a proper error
-        # TODO: Log this exception
+        logger.exception("Exception while creating question %s", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error ocrurred")
     if question_id is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error ocurred")
     # TODO: The data is already captured till this point
     # Asynchronously insert it into Mongo, either using Airflow scheduler or put it on the Rabbitmq queue
+    logger.info("Created question %s", question_id)
+    logger.info("Inserting question %s into Mongo", question_id)
     create_question_mongo(**question.dict())
+    logger.info("Publishing question %s to queue", question_id)
     publish('post_process', 'post_process', args=[question_id], queue_name='process-question')
     question_dict = fetch_question(question_id)
     answers = fetch_question_answers(question_id=question_id)
