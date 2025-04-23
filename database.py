@@ -8,13 +8,18 @@ However, seeing the module allows user to understand the application data model.
 Had we been using ORM, it would deal with ORM statements.
 """
 
+import logging
+import time
 from typing import List, Tuple, Any
 
-from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+from constants import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, DB_CONNECT_TIMEOUT
 from models import Difficulty, Kanda
 
 import psycopg2
 from psycopg2.errors import UniqueViolation, OperationalError
+
+
+logger = logging.getLogger(__name__)
 
 
 # User defined type
@@ -93,6 +98,7 @@ def get_database_connection(force: bool = False):
     """
     global connection
     if connection is None or force:
+        logger.info("Creating database connection with force as %s", force)
         try:
             connection = psycopg2.connect(
                 host=DB_HOST,
@@ -101,12 +107,12 @@ def get_database_connection(force: bool = False):
                 user=DB_USER,
                 password=DB_PASSWORD,
                 application_name='core',
-                connect_timeout=5
+                connect_timeout=DB_CONNECT_TIMEOUT
             )
         except OperationalError as e:
-            # TODO: Add logger.error
-            # Though this logger is not required, clients should perform their own logging.
-            print(f"Exception while creating PostgreSQL connection {e}")
+            # Most certainly, clients will log the exception too, however they have the freedom to decide.
+            # Thus logging this exception here as well.
+            logger.exception("Exception while creating PostgreSQL connection %s", e)
             raise e
     return connection
 
@@ -121,7 +127,7 @@ def retry_with_new_connection(func):
             # which we are handling here
             return func(*args, **kwargs)
         except psycopg2.InterfaceError:
-            print("handling interface error and recreating the connection")
+            logger.info("Handling interface error and recreating the connection")
             get_database_connection(force=True)
             return func(*args, **kwargs)
     return wrapper
@@ -154,8 +160,8 @@ def _create_tables():
     # It's taken care of automatically because of the context manager.
     with get_database_connection() as connection:
         # Context closes the cursor, hence we don't need to worry about closing it
-        # Although it's a client side cursor, and hence can be GCed and don't need to be explicitly closed
-        # for efficient memory and resource handling, still for completeness keep it in the context manager
+        # Although it's a client side cursor, and does not consume a DB server resource, don't need to be explicitly closed
+        # for efficient memory and resource handling. Still for completeness keep it in the context manager
         # so that cursor.close() gets called automatically on exit of context.
         with connection.cursor() as cursor:
             cursor.execute(TYPE_DIFFICULTY_CREATE)
@@ -170,6 +176,9 @@ def _drop_tables():
     # Context doesn't close the connection, thus connection will still be usable.
     # Context will ensure that everything is wrapped in a transaction and committed at once
     # only if there is no exception
+    logger.warning("Dropping tables. You have a 5 second grace period to cancel the operation")
+    time.sleep(5)
+    logger.info("Okay, dropping tables")
     with get_database_connection() as connection:
         # Context closes the cursor, hence we don't need to worry about closing it
         with connection.cursor() as cursor:
@@ -181,6 +190,7 @@ def _drop_tables():
 
 @retry_with_new_connection
 def create_question(question: str, kanda: Kanda | None = None, tags: list[str] | None = None, difficulty: Difficulty | None = None, answers: list[dict] | None = None) -> int:
+    logger.info("Creating question %s", question)
     tags = tags or []
     answers = answers or []
     kanda = kanda and kanda.value
@@ -191,27 +201,24 @@ def create_question(question: str, kanda: Kanda | None = None, tags: list[str] |
     # No need to explicitly call connection.commit()
     with connection:
         # Again, context closes the cursor
-        # We close the cursor for efficient memory and resource handling
+        # Keeping it here for sake of completeness
+        # Defensive programming, in case this client-side cursor changes to server-side cursor.
         with connection.cursor() as cursor:
             # Both database execute() commands are part of a single transaction.
             # It would be rolled back automatically by the context manager in case of any exception
-            try:
-                cursor.execute(
-                    "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (question, kanda, tags, difficulty),
-                )
-            # Should we reraise this exception or silently digest it.
-            except UniqueViolation as e:
-                print(f"Unique constraint violation while creating question {question}")
-                # TODO: The ideal way would be to raise a QuestionAlreadyExists, an application specific exception from here.
-                raise e
+            cursor.execute(
+                "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
+                (question, kanda, tags, difficulty),
+            )
             # There can be other exceptions too like NotNullViolation but we don't want to catch, log and re-raise everything.
             # Instead such exceptions would just be raised and clients of this helper should catch such exceptions.
             inserted_id = cursor.fetchone()[0]
             if len(answers) > 0:
+                logger.info("Creating %d answers for question %s", len(answers), question)
                 answers_tuples = [(inserted_id, answer["answer"], answer.get("is_correct", False)) for answer in answers]
                 statement = "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)"
                 cursor.executemany(statement, answers_tuples)
+    logger.info("Created question %s", question)
     return inserted_id
 
 
@@ -221,37 +228,40 @@ def fetch_question(question_id: int) -> dict[str, str | int]:
     Might raise InvalidTextRepresentation, but not handling it here.
     In case client sends an invalid input that would happen and clients should deal with it then.
     """
+    logger.info("Fetching question %s", question_id)
     result = None
     columns = None
     connection = get_database_connection()
+    # Client-side cursor, hence no DB server resource consumption, thus no need for context to ensure to close.
+    cursor = connection.cursor()
     # No inserts happening here, hence no need for a commit or rollback.
     # Thus, ideally no need for connection context.
-    # However for consistency with other functions, we use connection context
-    # Also defensive programming.
-    with connection:
-        with connection.cursor() as cursor:
-            statement = "SELECT id, question from questions WHERE id=%s"
-            cursor.execute(statement, (question_id,))
-            result = cursor.fetchone()
-            columns = [col.name for col in cursor.description]
+    statement = "SELECT * from questions WHERE id=%s"
+    cursor.execute(statement, (question_id,))
+    result = cursor.fetchone()
+    columns = [col.name for col in cursor.description]
     if result is None:
+        logger.info("Question %s not found", question_id)
         return {}
     row = {k: v for k, v in zip(columns, result)}
+    logger.info("Fetched question %s", question_id)
     return row
 
 
 @retry_with_new_connection
 def fetch_question_answers(question_id: int) -> list[dict[str, str | int]]:
+    logger.info("Fetching answers for question %s", question_id)
     rows = []
     columns = None
     connection = get_database_connection()
     with connection:
         with connection.cursor() as cursor:
-            statement = "SELECT a.id, a.answer from answers a WHERE a.question_id=%s"
+            statement = "SELECT * from answers a WHERE a.question_id=%s"
             cursor.execute(statement, (question_id,))
             rows = cursor.fetchall()
             columns = [col.name for col in cursor.description]
     if rows == []:
+        logger.info("No answers found for question %s", question_id)
         return []
     result = []
     for row in rows:
@@ -278,6 +288,7 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
             with connection.cursor() as cursor:
                 # Client should perform data validation and cleansing, and send appropriate data.
                 question_text = question['question']
+                logger.info("Creating question %s", question_text)
                 kanda = question.get('kanda')
                 tags = question.get('tags', [])
                 difficulty = question.get('difficulty')
@@ -288,22 +299,24 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
                         (question_text, kanda, tags, difficulty),
                     )
                 except UniqueViolation:
-                    print(f"Unique constraint violation while creating question {question_text}")
+                    logger.error(f"Unique constraint violation while creating question {question_text}")
                     skipped_rows.append(index + 1)
                     continue
                 inserted_id = cursor.fetchone()[0]
-                inserted_ids.append(inserted_id)
                 if len(answers) > 0:
                     for answer in answers:
                         cursor.execute(
                             "INSERT INTO answers (question_id, answer, is_correct) VALUES (%s, %s, %s)",
                             (inserted_id, answer["answer"], answer.get("is_correct", False)),
                         )
+                inserted_ids.append(inserted_id)
+                logger.info("Created question %s", question_text)
     return inserted_ids, skipped_rows
 
 
 @retry_with_new_connection
 def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None) -> list[dict[str, Any]]:
+    logger.info("Listing questions")
     connection = get_database_connection()
     rows = []
     columns = []
