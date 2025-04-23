@@ -318,11 +318,13 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
 def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None) -> list[dict[str, Any]]:
     logger.info("Listing questions")
     connection = get_database_connection()
+    cursor = connection.cursor()
     rows = []
     columns = []
     # We need to perform limit on the parent table and fetch all child rows for each parent rows
-    # This cannot be achieved with a simple limit clause
+    # This cannot be achieved with a simple limit clause on the joined table
     # To restrict and ensure correct number of parent rows we need to fetch on parent table in a subquery
+    logger.info("Creating subquery for questions")
     subquery = """
         SELECT id
         FROM questions
@@ -330,6 +332,7 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
     if difficulty is not None:
         subquery += f" WHERE difficulty = '{difficulty}'"
     subquery += f" ORDER BY id LIMIT {limit} OFFSET {offset}"
+    logger.info("Created subquery for questions")
     query = f"""
     SELECT questions.id as id, question, difficulty, kanda, tags, information, answers.id as answer_id, answer, is_correct,
            question_hindi, question_telugu, answer_hindi, answer_telugu
@@ -339,34 +342,27 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
     WHERE questions.id in ({subquery})
     ORDER BY questions.id, answers.id
     """
-    with connection:
-        with connection.cursor() as cursor:
-            # id is the primary key, hence has an index
-            # We are ordering on an indexed field
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            columns = [column.name for column in cursor.description]
+    logger.info("Created query for questions")
+    # id is the primary key, hence has an index
+    # We are ordering on an indexed field
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    columns = [column.name for column in cursor.description]
     if len(rows) == 0:
         return rows
     questions = []
     # Apply labels and covert to a list of dict
     for row in rows:
-        row_dict = {}
-        value_index = 0
-        column_index = 0
-        while column_index < len(columns) and value_index < len(row):
-            row_dict[columns[column_index]] = row[value_index]
-            value_index += 1
-            column_index += 1
+        row_dict = {k: v for k, v in zip(columns, row)}
         questions.append(row_dict)
-    # Let's apply two pointers just for fun
-    # instead of using zip
-    # Group the answers for same question
     grouped_answers = []
     first_question = questions[0]
     grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'],
                             'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi'], 'information': first_question['information'],
-                            'answers': [{'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']}]})
+                            'answers': []})
+    # answer_id could be None if this question has no answers
+    if first_question['answer_id'] is not None:
+        grouped_answers['answers'].append({'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']})
     for index in range(1, len(questions)):
         question = questions[index]
         if question['id'] == first_question['id']:
@@ -376,7 +372,8 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
             grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'],
                                     'question_telugu': first_question['question_telugu'], 'question_hindi': first_question['question_hindi'], 'information': first_question['information'],
                                     'answers': []})
-            grouped_answers[-1]['answers'].append({'id': question['answer_id'], 'answer': question['answer'], 'is_correct': question['is_correct'], 'answer_hindi': question['answer_hindi'], 'answer_telugu': question['answer_telugu']})
+            if first_question['answer_id'] is not None:
+                grouped_answers[-1]['answers'].append({'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']})
 
     return grouped_answers
 
