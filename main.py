@@ -45,6 +45,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# OAuth2 scheme, password flow, using a Bearer token
+# tokenUrl declares the endpoint that clients should use to get the token
+# It doesn't automatically create the endpoint/path function though.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
@@ -62,13 +65,16 @@ def _health() -> StatusResponse:
     return StatusResponse(status="Up")
 
 
+# This is the login endpoint
+# Client must send `username` and `password` in the request as form data, no JSON here
+# The OAuth2 spec enforces that the field names should be `username` and `password`
 @app.post("/token")
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     # Currently we only want to deal with an admin user
     if form_data.password == ADMIN_PASSWORD and form_data.username == "admin":
         return {"access_token": ADMIN_PASSWORD, "token_type": "bearer"}
     else:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
 
 @app.get("/questions")
@@ -91,10 +97,16 @@ def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Di
 
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    FastAPI will check the request `Authorization` header and see
+    if it has a Bearer plus some token.
+    This would happen because oauth2_schema has been declared as a dependency in this
+    path function.
+    """
     if token == ADMIN_PASSWORD:
         return "admin"
     else:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
 @app.post("/questions", status_code=status.HTTP_201_CREATED)
