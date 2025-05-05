@@ -22,6 +22,7 @@ from database import health as db_health
 from mongo_database import health as mongo_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
+from queueing import health as rabbitmq_health
 
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,11 @@ def _health() -> StatusResponse:
         logger.error("MongoDB is down")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="MongoDB is down")
     # TODO: Add a health check for Rabbitmq
+    try:
+        rabbitmq_health()
+    except Exception:
+        logger.error("RabbitMQ is down")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="RabbitMQ is down")
     # TODO: Add a health check for Redis
     # TODO: Add a health check for Elasticsearch
     logger.info("Health check passed")

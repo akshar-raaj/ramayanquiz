@@ -2,6 +2,7 @@ import pika
 import json
 
 from pika.exceptions import StreamLostError
+import pika.exceptions
 
 from constants import RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD
 
@@ -26,6 +27,16 @@ def retry_with_new_connection(func):
             get_rabbit_connection(force=True)
             return func(*args, **kwargs)
     return wrapper
+
+
+def health():
+    connection = get_rabbit_connection()
+    channel = connection.channel()
+    try:
+        channel.queue_declare('process-question', passive=True)
+        return True
+    except pika.exceptions.ChannelClosedByBroker:
+        return True
 
 
 @retry_with_new_connection
