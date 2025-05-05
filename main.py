@@ -33,6 +33,9 @@ logger.info("Bootstrapping")
 
 app = FastAPI()
 
+# Server should respond with 'access-control-allow-origin' header for only these origins.
+# As the server wouldn't respond with this header for other origins,
+# hence browser will block those origins from making the request
 origins = [
     "http://localhost:8000",
     "http://ramayanquiz.com",
@@ -43,7 +46,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
