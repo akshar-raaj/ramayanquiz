@@ -1,8 +1,8 @@
-fastapi[standard]
-psycopg2-binary
-python-dotenv
-pytest
-pyflakes
-pymongo
-openai
-pika
+fastapi[standard] # Modern, performant API framework
+psycopg2-binary   # Python library to connect to PostgreSQL
+python-dotenv     # Read a file with key-value pairs and inject into environment
+pytest            # A unit testing framework that works on Act, Assert principle
+pyflakes          # Code conventions, standards and quality
+pymongo           # Python library to connect to MongoDB
+openai            # API to consume OpenAI, ChatGPT
+pika              # Python library to connect to RabbitMQ
