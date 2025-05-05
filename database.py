@@ -121,9 +121,9 @@ def retry_with_new_connection(func):
     def wrapper(*args, **kwargs):
         try:
             # For idle connections, the connection might be closed by the server
-            # In such cases, executing the query will raise psycopg2.OperationError.
-            # OperationError is handled by psycopg2. But connection.closed is set True then.
-            # Running the query again will raise psycopg2.InterfaceError
+            # In such cases, executing the query will raise psycopg2.OperationalError.
+            # The context manager probably tries to handle the OperationalError,
+            # but in the process an InterfaceError is raised,
             # which we are handling here
             return func(*args, **kwargs)
         except psycopg2.InterfaceError:
