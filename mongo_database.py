@@ -44,6 +44,7 @@ def health():
     client = get_mongo_connection()
     return client.admin.command('ping')
 
+
 def _create_tables():
     """
     This is to keep consistency with database._create_tables.
