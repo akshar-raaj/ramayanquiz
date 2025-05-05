@@ -16,11 +16,11 @@ from websockets.exceptions import ConnectionClosedError
 from starlette.websockets import WebSocketState
 
 from constants import DATA_STORE, ADMIN_PASSWORD
-from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse
+from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse, TokenResponse
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count, fetch_question, fetch_question_answers
 from database import health as db_health
 from mongo_database import health as mongo_health
-from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
+from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as list_questions_mongo
 from queueing import publish
 from queueing import health as rabbitmq_health
 
@@ -87,7 +87,7 @@ def _health() -> StatusResponse:
 # Client must send `username` and `password` in the request as form data, no JSON here
 # The OAuth2 spec enforces that the field names should be `username` and `password`
 @app.post("/token")
-def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenResponse:
     """
     This API endpoint expects an application/x-www-form-urlencoded request instead of application/json
 
@@ -106,7 +106,7 @@ def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Di
         difficulty = difficulty.value if difficulty is not None else None
         questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
     elif DATA_STORE == DataStore.MONGO.value:
-        questions = get_questions_mongo(limit=limit, offset=offset)
+        questions = list_questions_mongo(limit=limit, offset=offset)
         updated_questions = []
         for question in questions:
             updated_question = question.copy()
@@ -119,7 +119,7 @@ def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Di
     return questions
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
     """
     FastAPI will check the request `Authorization` header and see
     if it has a Bearer plus some token.

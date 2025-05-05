@@ -19,6 +19,11 @@ class Difficulty(Enum):
     HARD = "hard"
 
 
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class Kanda(Enum):
     BALA_KANDA = "Bala Kanda"
     AYODHYA_KANDA = "Ayodhya Kanda"
