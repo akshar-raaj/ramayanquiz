@@ -88,6 +88,11 @@ def _health() -> StatusResponse:
 # The OAuth2 spec enforces that the field names should be `username` and `password`
 @app.post("/token")
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    """
+    This API endpoint expects an application/x-www-form-urlencoded request instead of application/json
+
+    curl -v -X POST --data "username=akshar" --data "password=boom" http://localhost:8000/token
+    """
     # Currently we only want to deal with an admin user
     if form_data.password == ADMIN_PASSWORD and form_data.username == "admin":
         return {"access_token": ADMIN_PASSWORD, "token_type": "bearer"}
