@@ -60,7 +60,7 @@ def _health() -> StatusResponse:
         # Severity error keeps the log shorter. It still signifies that an error/exception has ocurred
         # without emitting the traceback
         logger.error("Database is down!")
-        return StatusResponse(status="Database down")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database is down")
     logger.info("Health check passed")
     return StatusResponse(status="Up")
 
