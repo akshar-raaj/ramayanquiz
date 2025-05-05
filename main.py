@@ -61,6 +61,10 @@ def _health() -> StatusResponse:
         # without emitting the traceback
         logger.error("Database is down!")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database is down")
+    # TODO: Add a health check for Mongo
+    # TODO: Add a health check for Rabbitmq
+    # TODO: Add a health check for Redis
+    # TODO: Add a health check for Elasticsearch
     logger.info("Health check passed")
     return StatusResponse(status="Up")
 
