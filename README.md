@@ -25,10 +25,12 @@ This application drives [api.ramayanquiz.com](https://api.ramayanquiz.com/_healt
 | Transactional Database | PostgreSQL, battle-tested relational database |
 | Standby Database | MongoDB, a document database, allows RAD at the expense of data integrity and guarantees |
 | Message Broker | RabbitMQ, flexible message broker with more capabilities than a simple message queue |
+| Search Engine | Elasticsearch, a full-text search engine with built-in support for stop-words removal, stemming, lemmatization, synonym search, similarity and more |
 | Workflow Management | Airflow |
 | SQL Toolkit | SQLAlchemy |
 | Unit Testing | Pytest, simple and extensible testing framework |
 | CI/CD | Github Action, allows CI and CD. Simpler than Jenkins |
+| OpenAI | OpenAI API for translating between different languages, ChatGPT! |
 
 ## Setup
 
