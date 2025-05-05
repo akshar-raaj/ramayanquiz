@@ -19,6 +19,7 @@ from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count, fetch_question, fetch_question_answers
 from database import health as db_health
+from mongo_database import health as mongo_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as get_questions_mongo
 from queueing import publish
 
@@ -59,9 +60,13 @@ def _health() -> StatusResponse:
     except Exception:
         # Severity error keeps the log shorter. It still signifies that an error/exception has ocurred
         # without emitting the traceback
-        logger.error("Database is down!")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database is down")
-    # TODO: Add a health check for Mongo
+        logger.error("PostgreSQL is down!")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="PostgreSQL is down")
+    try:
+        mongo_health()
+    except Exception:
+        logger.error("MongoDB is down")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="MongoDB is down")
     # TODO: Add a health check for Rabbitmq
     # TODO: Add a health check for Redis
     # TODO: Add a health check for Elasticsearch
