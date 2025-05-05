@@ -6,6 +6,7 @@ FROM python:3.10-slim
 # Install dependencies
 # Combine multiple commands into a single RUN to ensure
 # efficient layer and caching
+# We need curl for HEALTHCHECK later down the line
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -22,10 +23,11 @@ RUN pip install -r requirements.txt
 
 # Expose the port that the application will run on
 # It doesn't actually publish the port, but instead works as a documentation
+# A best practice
 EXPOSE 8000
 
 # Add Healthcheck
-HEALTHCHECK CMD curl -f http://localhost:8000/_health || exit 1
+HEALTHCHECK --timeout=5s CMD curl -f http://localhost:8000/_health || exit 1
 
 # Run the command to start the development server
 # CMD format instead of EXEC format
