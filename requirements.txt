@@ -6,3 +6,4 @@ pyflakes          # Code conventions, standards and quality
 pymongo           # Python library to connect to MongoDB
 openai            # API to consume OpenAI, ChatGPT
 pika              # Python library to connect to RabbitMQ
+redis             # Python library to connect to Redis

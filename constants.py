@@ -19,3 +19,5 @@ DATA_STORE = os.getenv("DATA_STORE", "postgres")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CHATGPT_MODEL = 'gpt-4o'
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
