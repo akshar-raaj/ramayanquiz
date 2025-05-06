@@ -9,7 +9,7 @@ from psycopg2.errors import UniqueViolation
 from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import UploadFile, status
+from fastapi import UploadFile, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from websockets.exceptions import ConnectionClosedError
@@ -23,6 +23,7 @@ from mongo_database import health as mongo_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as list_questions_mongo
 from queueing import publish
 from queueing import health as rabbitmq_health
+from rate_limit import RateLimiter
 
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @app.get("/_health")
-def _health() -> StatusResponse:
+def _health(request: Request) -> StatusResponse:
+    client_ip = request.headers.get("x-forwarded-for")
+    is_rate_limited = False
+    if client_ip is not None:
+        rate_limiter = RateLimiter()
+        is_rate_limited = not rate_limiter.check(identifier=client_ip)
+    if is_rate_limited is True:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
     logger.info("Health check")
     try:
         db_health()
