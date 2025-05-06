@@ -57,9 +57,12 @@ class AnswerResponse(Answer):
 
 class Question(BaseModel):
     question: str
+    # Need to provide a default of None, in addition to type annotation of None, for keeping it optional at API level
     kanda: Kanda | None = None
     difficulty: Difficulty | None = None
     tags: list[str] | None = list()
+    # Although it's possible to create a question without answer at the DB layer,
+    # we want the user to pass answers in the API request.
     answers: list[Answer]
 
 

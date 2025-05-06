@@ -134,10 +134,15 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
 
 @app.post("/questions", status_code=status.HTTP_201_CREATED)
 def post_question(user: Annotated[str, Depends(get_current_user)], question: Question) -> QuestionResponse:
+    """
+    An example curl request:
+    curl -H "Authorization: Bearer abc\!123" -H "Content-Type: application/json" -X POST --data '{"question": "Who was Sita?", "answers": [{"answer": "God"}]}' http://localhost:8000/questions
+    """
     logger.info("Creating question")
     try:
         question_id = create_question(**question.dict())
     except UniqueViolation:
+        # This demonstrates how some exceptions don't need to be treated as an exception
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Question already exists")
     except Exception as e:
         # There ca be different type of exceptions like UniqueViolation etc.
@@ -163,6 +168,12 @@ def post_question(user: Annotated[str, Depends(get_current_user)], question: Que
 
 @app.post("/questions/bulk")
 def post_bulk_questions(token: Annotated[str, Depends(get_current_user)], file: UploadFile):
+    """
+    curl -H "Authorization: Bearer abc\!123" -F file=@"questions.csv" http://localhost:8000/questions/bulk
+    """
+    # Validate file type, ensure it's csv
+    # Read file in a memory efficient way
+    # Validate the columns of the csv
     f = file.file
     contents = f.read()
     csv_data = contents.decode('utf-8')

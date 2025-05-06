@@ -197,21 +197,20 @@ def create_question(question: str, kanda: Kanda | None = None, tags: list[str] |
     difficulty = difficulty and difficulty.value
     inserted_id = None
     connection = get_database_connection()
-    # Context will take care of commiting or rolling back the transaction
-    # No need to explicitly call connection.commit()
     with connection:
         # Again, context closes the cursor
-        # Keeping it here for sake of completeness
         # Defensive programming, in case this client-side cursor changes to server-side cursor.
         with connection.cursor() as cursor:
             # Both database execute() commands are part of a single transaction.
             # It would be rolled back automatically by the context manager in case of any exception
+            # We are using parametrized query, not interpolating or concatenating the string.
+            # This prevents us against SQL Injection attack.
             cursor.execute(
                 "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
                 (question, kanda, tags, difficulty),
             )
-            # There can be other exceptions too like NotNullViolation but we don't want to catch, log and re-raise everything.
-            # Instead such exceptions would just be raised and clients of this helper should catch such exceptions.
+            # Let database errors propagate
+            # Clients of this function have more contextual awareness, and they should deal with the exceptions
             inserted_id = cursor.fetchone()[0]
             if len(answers) > 0:
                 logger.info("Creating %d answers for question %s", len(answers), question)
@@ -298,6 +297,7 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
                         "INSERT INTO questions (question, kanda, tags, difficulty) VALUES (%s, %s, %s, %s) RETURNING id",
                         (question_text, kanda, tags, difficulty),
                     )
+                # We need to handle this exception, else it will cause a rollback
                 except UniqueViolation:
                     logger.error(f"Unique constraint violation while creating question {question_text}")
                     skipped_rows.append(index + 1)
