@@ -1,4 +1,5 @@
 import csv
+import json
 import asyncio
 import logging
 from io import StringIO
@@ -25,6 +26,7 @@ from queueing import publish
 from queueing import health as rabbitmq_health
 from redis_store import health as redis_health
 from rate_limit import RateLimiter
+from redis_store import get_redis_connection
 
 
 logger = logging.getLogger(__name__)
@@ -114,6 +116,14 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenRe
 
 @app.get("/questions")
 def get_questions(request: Request, limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None) -> list[QuestionResponse]:
+    """
+    This API warrants caching for the following reasons:
+    - It's frequently used.
+    - Data doesn't change often. Thus, no issue around stale data.
+    - It has expensive operation, i.e database calls which are I/O bound. Hence, these calls should be avoided
+
+    It can be scoped with limit, offset and difficulty. As it doesn't differ based on user, hence no user scope needed.
+    """
     client_ip = request.headers.get("x-forwarded-for")
     is_rate_limited = False
     if client_ip is not None:
@@ -121,10 +131,31 @@ def get_questions(request: Request, limit: int | None = 20, offset: int | None =
         is_rate_limited = not rate_limiter.check(identifier=client_ip)
     if is_rate_limited is True:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+
+    cache_key = f"{offset}-{limit}"
+    if difficulty is not None:
+        cache_key = f"{cache_key}-{difficulty.value}"
     if DATA_STORE == DataStore.POSTGRES.value:
-        difficulty = difficulty.value if difficulty is not None else None
-        questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
+        logger.info("Listing questions from Postgres Store")
+        # Attempt reading from the cache.
+        # If not in cache, then make database call and then set in cache as well.
+        # Cache-aside strategy
+        redis_connection = get_redis_connection()
+        logger.info(f"Cache key: {cache_key}")
+        questions = redis_connection.get(cache_key)
+        # Found in cache
+        if questions is not None:
+            logger.info("Found question in cache")
+            questions = json.loads(questions)
+        # Not found in cache
+        else:
+            logger.info("Did not find in cache. Getting from the database")
+            difficulty = difficulty.value if difficulty is not None else None
+            questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
+            redis_connection.set(cache_key, json.dumps(questions))
+            redis_connection.expire(cache_key, 60)
     elif DATA_STORE == DataStore.MONGO.value:
+        logger.info("Listing questions from Mongo Store")
         questions = list_questions_mongo(limit=limit, offset=offset)
         updated_questions = []
         for question in questions:
