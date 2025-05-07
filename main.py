@@ -23,6 +23,7 @@ from mongo_database import health as mongo_health
 from mongo_database import create_question as create_question_mongo, create_questions_bulk as create_questions_bulk_mongo, list_questions as list_questions_mongo
 from queueing import publish
 from queueing import health as rabbitmq_health
+from redis_store import health as redis_health
 from rate_limit import RateLimiter
 
 
@@ -79,13 +80,16 @@ def _health(request: Request) -> StatusResponse:
     except Exception:
         logger.error("MongoDB is down")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="MongoDB is down")
-    # TODO: Add a health check for Rabbitmq
     try:
         rabbitmq_health()
     except Exception:
         logger.error("RabbitMQ is down")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="RabbitMQ is down")
-    # TODO: Add a health check for Redis
+    try:
+        redis_health()
+    except Exception:
+        logger.error("Redis is down")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Redis is down")
     # TODO: Add a health check for Elasticsearch
     logger.info("Health check passed")
     return StatusResponse(status="Up")

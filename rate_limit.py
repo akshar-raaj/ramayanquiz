@@ -12,17 +12,7 @@ We will implement it as a decorator, so that the path functions can be decorated
 
 import redis
 
-from constants import REDIS_HOST, REDIS_PORT
-
-
-redis_connection = None
-
-
-def get_redis_connection(force=False):
-    global redis_connection
-    if redis_connection is None or force is True:
-        redis_connection = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-    return redis_connection
+from redis_store import get_redis_connection
 
 
 class RateLimiter(object):
