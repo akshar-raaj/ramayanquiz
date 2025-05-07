@@ -347,6 +347,7 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
     # We are ordering on an indexed field
     cursor.execute(query)
     rows = cursor.fetchall()
+    logger.info(f"Rows: {rows}")
     columns = [column.name for column in cursor.description]
     if len(rows) == 0:
         return rows
@@ -355,6 +356,7 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
     for row in rows:
         row_dict = {k: v for k, v in zip(columns, row)}
         questions.append(row_dict)
+    logger.info(f"Retrieved Questions: {questions}")
     grouped_answers = []
     first_question = questions[0]
     grouped_answers.append({'id': first_question['id'], 'question': first_question['question'], 'difficulty': first_question['difficulty'], 'kanda': first_question['kanda'], 'tags': first_question['tags'],
@@ -362,7 +364,7 @@ def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = No
                             'answers': []})
     # answer_id could be None if this question has no answers
     if first_question['answer_id'] is not None:
-        grouped_answers['answers'].append({'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']})
+        grouped_answers[0]['answers'].append({'id': first_question['answer_id'], 'answer': first_question['answer'], 'is_correct': first_question['is_correct'], 'answer_hindi': first_question['answer_hindi'], 'answer_telugu': first_question['answer_telugu']})
     for index in range(1, len(questions)):
         question = questions[index]
         if question['id'] == first_question['id']:
