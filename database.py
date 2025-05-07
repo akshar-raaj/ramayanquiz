@@ -316,6 +316,10 @@ def create_questions_bulk(questions: list[dict[str, str | list | dict]]) -> list
 
 @retry_with_new_connection
 def list_questions(limit: int = 20, offset: int = 0, difficulty: str | None = None) -> list[dict[str, Any]]:
+    """
+    Business logic should be pure and free of side-effects.
+    Hence any caching should be applied at the API layer and not here.
+    """
     logger.info("Listing questions")
     connection = get_database_connection()
     cursor = connection.cursor()
