@@ -113,7 +113,14 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenRe
 
 
 @app.get("/questions")
-def get_questions(limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None) -> list[QuestionResponse]:
+def get_questions(request: Request, limit: int | None = 20, offset: int | None = 0, difficulty: Difficulty | None = None) -> list[QuestionResponse]:
+    client_ip = request.headers.get("x-forwarded-for")
+    is_rate_limited = False
+    if client_ip is not None:
+        rate_limiter = RateLimiter()
+        is_rate_limited = not rate_limiter.check(identifier=client_ip)
+    if is_rate_limited is True:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
     if DATA_STORE == DataStore.POSTGRES.value:
         difficulty = difficulty.value if difficulty is not None else None
         questions = list_questions(limit=limit, offset=offset, difficulty=difficulty)
