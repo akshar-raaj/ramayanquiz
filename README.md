@@ -90,3 +90,5 @@ Add ML to predict the kanda and difficulty for a question
 Implement suggestions and question recommendations based on earlier questions attempted.
 
 Mobile Application
+
+Add integration tests, end to end tests including database calls

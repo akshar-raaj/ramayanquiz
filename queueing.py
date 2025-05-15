@@ -51,3 +51,12 @@ def publish(module_name: str, function_name: str, args: list, queue_name: str):
                           properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
     channel.close()
     print(f" [x] Published {data}")
+
+
+@retry_with_new_connection
+def publish_basic(queue_name: str, body: str):
+    connection = get_rabbit_connection()
+    channel = connection.channel()
+    channel.queue_declare(queue_name, durable=True)
+    channel.basic_publish('', queue_name, body=body)
+    print(f"[x] Published {body} to {queue_name}")

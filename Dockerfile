@@ -30,5 +30,5 @@ EXPOSE 8000
 HEALTHCHECK --timeout=5s CMD curl -f http://localhost:8000/_health || exit 1
 
 # Run the command to start the development server
-# CMD format instead of EXEC format
+# CMD EXEC format instead of SHELL format
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
