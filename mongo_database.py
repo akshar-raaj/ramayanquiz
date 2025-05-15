@@ -8,6 +8,7 @@ Unlike database.py, this module doesn't have any create table or create type sta
 MongoDB is schemaless and we do not need to create a schema in advance.
 """
 import datetime
+import logging
 import pymongo
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
@@ -18,6 +19,9 @@ from constants import MONGODB_CONNECTION_STRING
 from models import Kanda, Difficulty
 
 mongo_connection = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_mongo_connection(force=False):
@@ -76,6 +80,7 @@ def create_question(question: str, kanda: Kanda | None = None, difficulty: Diffi
     connection = get_mongo_connection()
     db = connection.ramayanquiz
     collection = db.questions
+    logger.info(f"Creating question {question}")
     document = {
         "question": question,
         # kanda, tags etc. might be null. Or they could be populated
@@ -108,7 +113,9 @@ def create_question(question: str, kanda: Kanda | None = None, difficulty: Diffi
     except DuplicateKeyError as e:
         print(f"Unique constraint violation while creating question {question}")
         raise e
-    return inserted_record.inserted_id
+    inserted_id = inserted_record.inserted_id
+    logger.info(f"Created question {question}")
+    return inserted_id
 
 
 @retry_with_new_connection
