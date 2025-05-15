@@ -36,6 +36,8 @@ def health():
         channel.queue_declare('process-question', passive=True)
         return True
     except pika.exceptions.ChannelClosedByBroker:
+        # Even if the queue is not found.
+        # It's okay as long as we are able to connect to the RabbitMQ Host.
         return True
 
 

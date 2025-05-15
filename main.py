@@ -1,3 +1,4 @@
+# Python built-in imports
 import csv
 import json
 import asyncio
@@ -7,15 +8,17 @@ from typing import Annotated
 
 from psycopg2.errors import UniqueViolation
 
+# FastAPI imports
 from fastapi import FastAPI, Depends, HTTPException, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-
 from fastapi import UploadFile, status, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+# Websocket imports
 from websockets.exceptions import ConnectionClosedError
 from starlette.websockets import WebSocketState
 
+# Application imports
 from constants import DATA_STORE, ADMIN_PASSWORD
 from models import Question, DataStore, Difficulty, StatusResponse, QuestionResponse, TokenResponse
 from database import create_question, create_questions_bulk, list_questions, most_recent_question_id, recent_questions_count, fetch_question, fetch_question_answers
@@ -65,6 +68,7 @@ def _health(request: Request) -> StatusResponse:
     client_ip = request.headers.get("x-forwarded-for")
     is_rate_limited = False
     if client_ip is not None:
+        logger.info(f"Client IP: {client_ip}. Performing rate limit check")
         rate_limiter = RateLimiter()
         is_rate_limited = not rate_limiter.check(identifier=client_ip)
     if is_rate_limited is True:
