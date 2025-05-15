@@ -1,5 +1,6 @@
 import pika
 import json
+import logging
 
 from pika.exceptions import StreamLostError
 import pika.exceptions
@@ -8,6 +9,9 @@ from constants import RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASS
 
 
 rabbit_connection = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_rabbit_connection(force=False):
@@ -45,14 +49,17 @@ def health():
 def publish(module_name: str, function_name: str, args: list, queue_name: str):
     connection = get_rabbit_connection()
     channel = connection.channel()
+    # A durable queue, will survive a server restart or a server crash
     channel.queue_declare(queue=queue_name, durable=True)
     data = json.dumps({'module_name': module_name, 'function_name': function_name, 'args': args})
+    # Publishing to a Direct exchange with the queue routing_key.
+    # It will ensure that the exchange routes to the queue with the same name as routing key.
     channel.basic_publish(exchange='',
                           routing_key=queue_name,
                           body=data,
                           properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
     channel.close()
-    print(f" [x] Published {data}")
+    logger.info(f"Published {data} to {queue_name}")
 
 
 @retry_with_new_connection
